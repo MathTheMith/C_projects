@@ -1,10 +1,12 @@
+# --- CONFIGURATION ----------------------------------------------------
+
 CC = gcc
-CFLAGS = -Wall -Wextra -Iinclude
-LDFLAGS = -lraylib -lopengl32 -lgdi32 -lwinmm
+CFLAGS = -Wall -Wextra -std=c99 -Iinclude -Isrc/raylib/src
+LDFLAGS = -Lsrc/raylib/src -lraylib -lm -ldl -lpthread -lGL -lrt -lX11
 
 SRC_DIR = src
 OBJ_DIR = obj
-INC_DIR = include
+RAYLIB_DIR = src/raylib
 
 SRCS = $(SRC_DIR)/main.c \
        $(SRC_DIR)/game/game_logic.c \
@@ -18,56 +20,51 @@ SRCS = $(SRC_DIR)/main.c \
        $(SRC_DIR)/utils/line_clear.c
 
 OBJS = $(SRCS:$(SRC_DIR)/%.c=$(OBJ_DIR)/%.o)
-NAME = tetris.exe
+TARGET = tetris
 
-all: create_dirs $(NAME)
+# --- RULES ------------------------------------------------------------
 
-create_dirs:
-	@if not exist $(OBJ_DIR) mkdir $(OBJ_DIR)
-	@if not exist $(OBJ_DIR)\game mkdir $(OBJ_DIR)\game
-	@if not exist $(OBJ_DIR)\render mkdir $(OBJ_DIR)\render
-	@if not exist $(OBJ_DIR)\pieces mkdir $(OBJ_DIR)\pieces
-	@if not exist $(OBJ_DIR)\utils mkdir $(OBJ_DIR)\utils
+all: raylib $(TARGET)
 
-$(NAME): $(OBJS)
-	$(CC) $(OBJS) -o $(NAME) $(LDFLAGS)
-	@echo Build complete!
+# Compilation de l'exécutable
+$(TARGET): $(OBJS)
+	$(CC) $(OBJS) -o $(TARGET) $(LDFLAGS)
+	@echo "===> Build complete: ./$(TARGET)"
 
-$(OBJ_DIR)/main.o: $(SRC_DIR)/main.c
+# Règle générique pour compiler les .c en .o
+$(OBJ_DIR)/%.o: $(SRC_DIR)/%.c
+	@mkdir -p $(dir $@)
 	$(CC) $(CFLAGS) -c $< -o $@
 
-$(OBJ_DIR)/game/game_logic.o: $(SRC_DIR)/game/game_logic.c
-	$(CC) $(CFLAGS) -c $< -o $@
+# --- RAYLIB BUILD -----------------------------------------------------
 
-$(OBJ_DIR)/game/input_handler.o: $(SRC_DIR)/game/input_handler.c
-	$(CC) $(CFLAGS) -c $< -o $@
+raylib:
+	@if [ ! -d "$(RAYLIB_DIR)" ]; then \
+		echo "===> Clonage de Raylib..."; \
+		git clone https://github.com/raysan5/raylib.git $(RAYLIB_DIR); \
+	fi
+	@if [ ! -f "$(RAYLIB_DIR)/src/libraylib.a" ]; then \
+		echo "===> Compilation de Raylib..."; \
+		$(MAKE) -C $(RAYLIB_DIR)/src PLATFORM=PLATFORM_DESKTOP; \
+	else \
+		echo "===> Raylib déjà compilé"; \
+	fi
 
-$(OBJ_DIR)/render/draw_game.o: $(SRC_DIR)/render/draw_game.c
-	$(CC) $(CFLAGS) -c $< -o $@
-
-$(OBJ_DIR)/render/draw_pieces.o: $(SRC_DIR)/render/draw_pieces.c
-	$(CC) $(CFLAGS) -c $< -o $@
-
-$(OBJ_DIR)/pieces/piece_collision.o: $(SRC_DIR)/pieces/piece_collision.c
-	$(CC) $(CFLAGS) -c $< -o $@
-
-$(OBJ_DIR)/pieces/piece_lock.o: $(SRC_DIR)/pieces/piece_lock.c
-	$(CC) $(CFLAGS) -c $< -o $@
-
-$(OBJ_DIR)/pieces/piece_rotation.o: $(SRC_DIR)/pieces/piece_rotation.c
-	$(CC) $(CFLAGS) -c $< -o $@
-
-$(OBJ_DIR)/utils/bag_system.o: $(SRC_DIR)/utils/bag_system.c
-	$(CC) $(CFLAGS) -c $< -o $@
-
-$(OBJ_DIR)/utils/line_clear.o: $(SRC_DIR)/utils/line_clear.c
-	$(CC) $(CFLAGS) -c $< -o $@
+# --- CLEAN ------------------------------------------------------------
 
 clean:
-	@if exist $(OBJ_DIR) rmdir /s /q $(OBJ_DIR)
-	@if exist $(NAME) del /q $(NAME)
-	@echo Clean complete!
+	@echo "===> Nettoyage (obj/, binaire, raylib)..."
+	rm -rf $(OBJ_DIR)
+	rm -f $(TARGET)
+	rm -rf $(RAYLIB_DIR)
 
-rebuild: clean all
+fclean: clean
 
-.PHONY: all clean rebuild create_dirs
+re: fclean all
+
+# --- RUN --------------------------------------------------------------
+
+run: all
+	./$(TARGET)
+
+.PHONY: all clean fclean re raylib run

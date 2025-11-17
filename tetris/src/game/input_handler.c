@@ -11,15 +11,10 @@ void handle_input(GameState *state)
 {
     int gp = state->gamepad_id;
     
-    if (!IsGamepadAvailable(gp))
-    {
-        DrawText("Manette non détectée!", 300, 500, 20, RED);
-        return;
-    }
-    
-    // Mouvements latéraux
     if (IsGamepadButtonDown(gp, GAMEPAD_BUTTON_LEFT_FACE_LEFT) ||
-        GetGamepadAxisMovement(gp, GAMEPAD_AXIS_LEFT_X) < -0.5)
+        GetGamepadAxisMovement(gp, GAMEPAD_AXIS_LEFT_X) < -0.5 ||
+        IsKeyDown(KEY_H) ||
+        IsKeyDown(KEY_LEFT))
     {
         if (move_counter > 3)
         {
@@ -33,7 +28,9 @@ void handle_input(GameState *state)
         move_counter++;
     }
     else if (IsGamepadButtonDown(gp, GAMEPAD_BUTTON_LEFT_FACE_RIGHT) ||
-             GetGamepadAxisMovement(gp, GAMEPAD_AXIS_LEFT_X) > 0.5)
+             GetGamepadAxisMovement(gp, GAMEPAD_AXIS_LEFT_X) > 0.5 ||
+             IsKeyDown(KEY_L) ||
+             IsKeyDown(KEY_RIGHT))
     {
         if (move_counter > 3)
         {
@@ -51,15 +48,18 @@ void handle_input(GameState *state)
         move_counter = 0;
     }
     
-    // Rotations
-    if (IsGamepadButtonPressed(gp, GAMEPAD_BUTTON_RIGHT_FACE_DOWN))
+    if (IsGamepadButtonPressed(gp, GAMEPAD_BUTTON_RIGHT_FACE_DOWN) ||
+        IsKeyPressed(KEY_D) ||
+        IsKeyPressed(KEY_UP))
         rotate_piece(state->map, &state->current, 1);
     
-    if (IsGamepadButtonPressed(gp, GAMEPAD_BUTTON_RIGHT_FACE_RIGHT))
+    if (IsGamepadButtonPressed(gp, GAMEPAD_BUTTON_RIGHT_FACE_RIGHT) ||
+        IsKeyPressed(KEY_S))
         rotate_piece(state->map, &state->current, -1);
     
-    // Hard drop
-    if (IsGamepadButtonPressed(gp, GAMEPAD_BUTTON_LEFT_FACE_UP))
+    if (IsGamepadButtonPressed(gp, GAMEPAD_BUTTON_LEFT_FACE_UP) ||
+        IsKeyPressed(KEY_K) ||
+        IsKeyPressed(KEY_SPACE))
     {
         while (can_move(state->map, &state->current, 'd'))
             state->current.y += SIZE_SQUARE;
@@ -78,8 +78,9 @@ void handle_input(GameState *state)
         return;
     }
     
-    // Soft drop
-    if (IsGamepadButtonDown(gp, GAMEPAD_BUTTON_LEFT_FACE_DOWN))
+    if (IsGamepadButtonDown(gp, GAMEPAD_BUTTON_LEFT_FACE_DOWN) ||
+        IsKeyDown(KEY_J) ||
+        IsKeyDown(KEY_DOWN))
     {
         if (can_move(state->map, &state->current, 'd'))
         {
@@ -88,8 +89,9 @@ void handle_input(GameState *state)
         }
     }
     
-    // Hold
-    if (IsGamepadButtonPressed(gp, GAMEPAD_BUTTON_LEFT_TRIGGER_1) && state->can_hold)
+    if ((IsGamepadButtonPressed(gp, GAMEPAD_BUTTON_LEFT_TRIGGER_1) ||
+         IsKeyPressed(KEY_TAB) ||
+         IsKeyPressed(KEY_C)) && state->can_hold)
     {
         if (state->held_piece == -1)
         {
@@ -108,7 +110,6 @@ void handle_input(GameState *state)
         state->can_hold = 0;
     }
     
-    // Gravité
     if (state->frame_counter > 10)
     {
         if (can_move(state->map, &state->current, 'd'))
@@ -124,7 +125,6 @@ void handle_input(GameState *state)
         state->frame_counter = 0;
     }
     
-    // Lock delay
     if (is_grounded)
     {
         if (lock_delay >= 60)
