@@ -46,7 +46,7 @@ bool are_9_digits(char **board)
 
 bool are_row_col_valid(char **board)
 {
-    int x, y, i, num;
+    int x, y, num;
     int seen[9];
 
     x = 0;

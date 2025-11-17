@@ -23,11 +23,6 @@ bool are_row_col_valid(char **board);
 int find_empty_cell(char **board, int *x, int *y);
 int solve(char **board);
 char **sudoku_maker();
-static size_t	ft_intlen(int n);
-char	*special_cases(int n);
-char	*allocate_memory(int n);
-void	convert_number(char *ptr, int n, size_t len);
-char	*ft_itoa(int n);
 
 
 

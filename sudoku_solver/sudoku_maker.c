@@ -16,27 +16,30 @@ char **grid_maker(void)
         board[i] = malloc(9 * sizeof(char));
         if (!board[i])
         {
-            while (i >= 0)
+            while (i > 0)
             {
-                free(board[i]);
                 i--;
+                free(board[i]);
             }
             free(board);
             return NULL;
         }
+        j = 0;
         while (j < 9)
         {
             board[i][j] = '0';
             j++;
         }
         i++;
-        j = 0;
     }
     return board;
 }
 
 int is_valid_number(const char *str)
 {
+    if (!str || *str == '\0')
+        return 0;
+    
     while (*str)
     {
         if (!isdigit(*str))
@@ -49,6 +52,9 @@ int is_valid_number(const char *str)
 void free_board(char **board)
 {
     int i = 0;
+    if (!board)
+        return;
+    
     while (i < 9)
     {
         free(board[i]);
@@ -64,12 +70,16 @@ char **sudoku_maker(void)
     int num_cells;
     char **board;
     
-    printf("Combien de chiffres voulez-vous ? \n");
+    printf("Combien de chiffres voulez-vous ?\n");
     while (1)
     {
         printf("Veuillez entrer un chiffre entre 0 et 81 : ");
-        scanf("%s", how_many_numbs);
-
+        if (scanf("%3s", how_many_numbs) != 1)
+        {
+            printf("Erreur de lecture.\n");
+            while (getchar() != '\n');
+            continue;
+        }
         if (is_valid_number(how_many_numbs))
         {
             num_cells = atoi(how_many_numbs);
@@ -81,7 +91,10 @@ char **sudoku_maker(void)
 
     board = grid_maker();
     if (!board)
+    {
+        printf("Erreur d'allocation mémoire.\n");
         return NULL;
+    }
 
     srand(time(NULL));
 
@@ -100,7 +113,6 @@ char **sudoku_maker(void)
             else
                 board[random_x][random_y] = '0';
         }
-
     }
 
     return board;
