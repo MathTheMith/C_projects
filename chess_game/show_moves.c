@@ -33,7 +33,7 @@ void show_wpawns_moves(int x, int y, Texture2D board[BOARD_SIZE][BOARD_SIZE]) {
     int i;
     Color lightBlack = (Color){22, 21, 17, 100};
     i = y - 1;
-    if (y == 7 && is_valid_move(x, i, board)) {
+    if (y == 6 && is_valid_move(x, i, board)) {
         DrawCircle(x * 100 + 50, i * 100 + 50, 15, lightBlack);
         i--;
         if (is_valid_move(x, i, board)) {
@@ -49,7 +49,7 @@ void show_bpawns_moves(int x, int y, Texture2D board[BOARD_SIZE][BOARD_SIZE]) {
     int i;
     Color lightBlack = (Color){22, 21, 17, 100};
     i = y + 1;
-    if (y == 2 && is_valid_move(x, i, board)) {
+    if (y == 1 && is_valid_move(x, i, board)) {
         DrawCircle(x * 100 + 50, i * 100 + 50, 15, lightBlack);
         i++;
         if (is_valid_move(x, i, board)) {

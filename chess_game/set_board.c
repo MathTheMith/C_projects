@@ -1,19 +1,16 @@
 #include "chess_game.h"
 
-#define BOARD_SIZE 10
-
 Texture2D wR, bR, wN, bN, wB, bB, wK, bK, wQ, bQ, wP, bP;
 
 bool is_piece_on_square(Texture2D board[BOARD_SIZE][BOARD_SIZE], int x, int y) {
     return board[x][y].id != 0;
 }
 
-void set_board() {
+void set_board(Texture2D board[BOARD_SIZE][BOARD_SIZE]) {
     Color lightBrown = (Color){181, 135, 99, 255};
     Color lightBeige = (Color){240, 218, 181, 255};
     Color lightBlack = (Color){22, 21, 17, 220};
 
-    Texture2D board[BOARD_SIZE][BOARD_SIZE] = {0};
     Texture2D current_piece = {0};
 
     int current_turn = 0;
@@ -24,7 +21,8 @@ void set_board() {
     SetTargetFPS(60);
     init_board(board);
 
-    while (!WindowShouldClose()) {
+    while (!WindowShouldClose())
+    {
         Vector2 mousePos = GetMousePosition();
         int x = mousePos.x / 100;
         int y = mousePos.y / 100;
@@ -36,11 +34,7 @@ void set_board() {
             int j = 0;
             while (j < BOARD_SIZE) {
                 Color color = ((i + j) % 2 == 0) ? lightBrown : lightBeige;
-                if (i == 0 || j == 0 || i == 9 || j == 9) {
-                    DrawRectangle(i * 100, j * 100, 100, 100, lightBlack);
-                } else {
                     DrawRectangle(i * 100, j * 100, 100, 100, color);
-                }
                 if (is_piece_on_square(board, i, j)) {
                     DrawTexture(board[i][j], i * 100, j * 100, WHITE);
                 }

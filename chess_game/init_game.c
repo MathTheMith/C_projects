@@ -15,25 +15,25 @@ void init_board(Texture2D board[BOARD_SIZE][BOARD_SIZE])
     wQ = LoadTexture("./Images/wQ.png");
     bQ = LoadTexture("./Images/bQ.png");
     
-    board[1][8] = wR; board[8][8] = wR;
-    board[2][8] = wN; board[7][8] = wN;
-    board[3][8] = wB; board[6][8] = wB;
-    board[4][8] = wK; board[5][8] = wQ;
+    board[0][7] = wR; board[7][7] = wR;
+    board[1][7] = wN; board[6][7] = wN;
+    board[2][7] = wB; board[5][7] = wB;
+    board[3][7] = wQ; board[4][7] = wK;
 
-    board[1][1] = bR; board[8][1] = bR;
-    board[2][1] = bN; board[7][1] = bN;
-    board[3][1] = bB; board[6][1] = bB;
-    board[4][1] = bK; board[5][1] = bQ;
+    board[0][0] = bR; board[7][0] = bR;
+    board[1][0] = bN; board[6][0] = bN;
+    board[2][0] = bB; board[5][0] = bB;
+    board[3][0] = bQ; board[4][0] = bK;
 
-    int i = 1;
-    while (i < 9) {
-        board[i][7] = wP;
+    int i = 0;
+    while (i < 8) {
+        board[i][6] = wP;
         i++;
     }
     
-    int j = 1;
-    while (j < 9) {
-        board[j][2] = bP;
+    int j = 0;
+    while (j < 8) {
+        board[j][1] = bP;
         j++;
     }
 }

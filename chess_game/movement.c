@@ -89,7 +89,7 @@ bool is_valid_wpawn_move(Texture2D board[BOARD_SIZE][BOARD_SIZE], int old_x, int
             return true;
         }
         // Deux pas depuis la position initiale
-        if (old_y == 7 && new_y == old_y - 2 && 
+        if (old_y == 6 && new_y == old_y - 2 && 
             is_valid_move(new_x, new_y, board) && 
             is_valid_move(new_x, old_y - 1, board)) {
             return true;
@@ -119,7 +119,7 @@ bool is_valid_bpawn_move(Texture2D board[BOARD_SIZE][BOARD_SIZE], int old_x, int
             return true;
         }
         // Deux pas depuis la position initiale
-        if (old_y == 2 && new_y == old_y + 2 && 
+        if (old_y == 1 && new_y == old_y + 2 && 
             is_valid_move(new_x, new_y, board) && 
             is_valid_move(new_x, old_y + 1, board)) {
             return true;
@@ -167,7 +167,8 @@ bool is_valid_destination(Texture2D board[BOARD_SIZE][BOARD_SIZE], int old_x, in
     return false;
 }
 
-bool can_capture(Texture2D board[BOARD_SIZE][BOARD_SIZE], int x, int y, int old_x, int old_y) {
+bool can_capture(Texture2D board[BOARD_SIZE][BOARD_SIZE], int x, int y, int old_x, int old_y)
+{
     bool is_selected_white = (board[old_x][old_y].id == wR.id || 
                             board[old_x][old_y].id == wN.id || 
                             board[old_x][old_y].id == wB.id || 
