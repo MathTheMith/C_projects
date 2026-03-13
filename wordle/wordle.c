@@ -18,94 +18,87 @@ typedef struct {
 
 char *get_random_line(const char *filename, int target_line)
 {
-    int fd = open(filename, O_RDONLY);
-    if (fd < 0) {
-        perror("Erreur à l'ouverture du fichier");
-        return NULL;
-    }
-    char buffer[BUFFER_SIZE];
-    int bytes_read, current_line = 1, buffer_pos = 0, i = 0;
-    char *line = malloc(BUFFER_SIZE);
-    if (!line) {
-        perror("Erreur d'allocation mémoire");
-        close(fd);
-        return NULL;
-    }
-
-    while ((bytes_read = read(fd, buffer, BUFFER_SIZE)) > 0)
+    FILE *file = fopen(filename, "r");
+    if (!file)
     {
-        for (i = 0; i < bytes_read; i++) {
-            if (buffer[i] == '\n') {
-                buffer[i] = '\0';
-                if (current_line == target_line) {
-                    strcpy(line, &buffer[buffer_pos]);
-                    close(fd);
-                    return line;
-                }
-                current_line++;
-                buffer_pos = i + 1;
-            }
-        }
+        perror("Erreur ouverture fichier");
+        return NULL;
     }
 
-    close(fd);
-    free(line);
+    char buffer[MAX_WORD_LENGTH];
+    int current_line = 1;
+
+    while (fgets(buffer, sizeof(buffer), file))
+    {
+        if (current_line == target_line)
+        {
+            buffer[strcspn(buffer, "\n")] = 0;
+            char *line = malloc(strlen(buffer) + 1);
+            strcpy(line, buffer);
+            fclose(file);
+            return line;
+        }
+        current_line++;
+    }
+
+    fclose(file);
     return NULL;
 }
 char *print_answer(char *word_to_find, char *guess, Try history[], int current_try)
 {
-    int i = 0;
     int len = strlen(word_to_find);
-    char temp[COLOR_LENGTH];
     int used_target[MAX_WORD_LENGTH] = {0};
+    int used_guess[MAX_WORD_LENGTH] = {0};
+    char temp[COLOR_LENGTH];
 
     history[current_try].word_length = len;
 
-    while (i < len)
+    for (int i = 0; i < len; i++)
     {
         if (guess[i] == word_to_find[i])
         {
-            sprintf(temp, "\033[32m%c\033[0m", guess[i]);  // Vert
+            sprintf(temp, "\033[32m%c\033[0m", guess[i]);
             strcpy(history[current_try].colored_word[i], temp);
             used_target[i] = 1;
+            used_guess[i] = 1;
         }
-        else
-        {
-            int found = 0;
-            int j = 0;
-            while (j < len)
-            {
-                if (!used_target[j] && guess[i] == word_to_find[j])
-                {
-                    sprintf(temp, "\033[33m%c\033[0m", guess[i]);  // Jaune
-                    strcpy(history[current_try].colored_word[i], temp);
-                    used_target[j] = 1;
-                    found = 1;
-                    break;
-                }
-                j++;
-            }
-            if (!found)
-            {
-                sprintf(temp, "\033[31m%c\033[0m", guess[i]);  // Rouge
-                strcpy(history[current_try].colored_word[i], temp);
-            }
-        }
-        i++;
     }
-    
-    int k = 0;
-    while (k <= current_try)
+
+    for (int i = 0; i < len; i++)
     {
-        i = 0;
-        while (i < history[k].word_length)
+        if (used_guess[i])
+            continue;
+
+        int found = 0;
+
+        for (int j = 0; j < len; j++)
+        {
+            if (!used_target[j] && guess[i] == word_to_find[j])
+            {
+                sprintf(temp, "\033[33m%c\033[0m", guess[i]);
+                strcpy(history[current_try].colored_word[i], temp);
+                used_target[j] = 1;
+                found = 1;
+                break;
+            }
+        }
+
+        if (!found)
+        {
+            sprintf(temp, "\033[31m%c\033[0m", guess[i]);
+            strcpy(history[current_try].colored_word[i], temp);
+        }
+    }
+
+    for (int k = 0; k <= current_try; k++)
+    {
+        for (int i = 0; i < history[k].word_length; i++)
         {
             printf("%s", history[k].colored_word[i]);
-            i++;
         }
         printf("\n");
-        k++;
     }
+
     return NULL;
 }
 
@@ -114,7 +107,7 @@ void wordle(char *word_to_find)
     char guess[MAX_WORD_LENGTH];
     int tries = MAX_TRIES;
     int current_try = 0;
-    Try history[MAX_TRIES];
+    Try history[MAX_TRIES] = {0};;
 
     printf("BIENVENUE AU WORDLE \nQuel est votre premier mot ? \nLe mot est de %ld caractères et vous avez %d essais.\n", 
            strlen(word_to_find), tries);
@@ -122,7 +115,7 @@ void wordle(char *word_to_find)
     while (tries > 0)
     {
         printf("Entrez un mot : ");
-        scanf("%s", guess);
+        scanf("%29s", guess);
 
         if (strlen(guess) != strlen(word_to_find))
         {
@@ -158,6 +151,7 @@ int main()
         printf("Erreur : ligne non trouvée.\n");
         return EXIT_FAILURE;
     }
+    printf("%s\n", word_to_find);
     wordle(word_to_find);
     free(word_to_find);
 
