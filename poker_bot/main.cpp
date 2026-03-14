@@ -1,7 +1,7 @@
 #include <iostream>
 #include <vector>
-#include "includes/Deck.hpp"
-#include "includes/Card.hpp"
+#include "includes/deck.hpp"
+#include "includes/card.hpp"
 #include "includes/GameLogic.hpp"
 #include "includes/preflop.hpp"
 #include "resultCard.hpp"

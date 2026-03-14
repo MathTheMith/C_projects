@@ -22,8 +22,8 @@ $(TARGET): $(OBJS)
 	$(CC) $(CFLAGS) $(INCLUDES) -c $< -o $@
 
 # Cible pour nettoyer les fichiers objets et l'exécutable
-clean:
+fclean:
 	rm -f $(OBJS) $(TARGET)
 
 # Cible pour recompiler tout
-re: clean all
+re: fclean all

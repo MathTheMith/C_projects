@@ -1,8 +1,8 @@
 #ifndef HAND_EVALUATOR_HPP
 #define HAND_EVALUATOR_HPP
 
-#include "Card.hpp"
 #include <vector>
+#include "card.hpp"
 
 int calculateHandValue(const Card& card1, const Card& card2, const std::vector<Card>& board);
 int comparePlayers(const Card& p1_card1, const Card& p1_card2,

@@ -1,7 +1,7 @@
 #ifndef HAND_EVALUATOR_HPP
 #define HAND_EVALUATOR_HPP
 
-#include "Card.hpp"
+#include "card.hpp"
 #include <vector>
 
 // Vérifie s'il y a une flush

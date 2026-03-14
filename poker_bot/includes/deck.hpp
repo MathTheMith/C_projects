@@ -4,7 +4,8 @@
 #include <vector>
 #include <algorithm>
 #include <random>
-#include "Card.hpp"
+#include "card.hpp"
+
 
 class Deck {
 public:

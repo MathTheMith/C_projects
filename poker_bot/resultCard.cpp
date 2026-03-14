@@ -5,7 +5,7 @@
 #include <set>
 #include "includes/resultCard.hpp"
 #include "includes/GameLogic.hpp"
-#include "includes/Card.hpp"
+#include "includes/card.hpp"
 
 using namespace std;
 
