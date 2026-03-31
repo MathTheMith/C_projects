@@ -8,7 +8,7 @@
 #define MAX_LINE_LENGTH 22735
 #define BUFFER_SIZE 30
 #define MAX_TRIES 6
-#define MAX_WORD_LENGTH 30
+#define MAX_WORD_LENGTH 500
 #define COLOR_LENGTH 20
 
 typedef struct {
@@ -115,7 +115,7 @@ void wordle(char *word_to_find)
     while (tries > 0)
     {
         printf("Entrez un mot : ");
-        scanf("%29s", guess);
+        scanf("%500s", guess);
 
         if (strlen(guess) != strlen(word_to_find))
         {
