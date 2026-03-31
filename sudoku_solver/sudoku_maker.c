@@ -63,13 +63,33 @@ void free_board(char **board)
     free(board);
 }
 
-char **sudoku_maker(void)
+void print_progression(int num_cells, int i)
+{
+    char bar[82];   
+    int filled = (num_cells > 0) ? (i * 40) / num_cells : 0;                  
+    for (int p = 0; p < 40; p++)                                              
+        bar[p] = (p < filled) ? '#' : ' ';                                    
+    bar[40] = '\0';                                                           
+    printf("\r[%s] %d/%d", bar, i, num_cells);                                
+}
+
+char **sudoku_maker(char *arg)
 {
     char how_many_numbs[4];
     int i = 0;
     int num_cells;
     char **board;
-    
+
+    if (arg && is_valid_number(arg))
+    {
+        num_cells = atoi(arg);
+        if (num_cells >= 0 && num_cells <= 81)
+        {
+            printf("Nombre de chiffres : %d\n", num_cells);
+            goto skip_prompt;
+        }
+        printf("Argument invalide (doit être entre 0 et 81).\n");
+    }
     printf("Combien de chiffres voulez-vous ?\n");
     while (1)
     {
@@ -88,7 +108,7 @@ char **sudoku_maker(void)
         }
         printf("Entrée invalide. Essayez encore.\n");
     }
-
+    skip_prompt:;
     board = grid_maker();
     if (!board)
     {
@@ -96,8 +116,12 @@ char **sudoku_maker(void)
         return NULL;
     }
 
+    if (num_cells >= 60)
+    {
+        printf("\nIt can take some time...\n");
+        fflush(stdout);
+    }
     srand(time(NULL));
-
     while (i < num_cells)
     {
         int random_numb = rand() % 9 + 1;
@@ -107,13 +131,27 @@ char **sudoku_maker(void)
         if (board[random_x][random_y] == '0')
         {
             board[random_x][random_y] = random_numb + '0';
-
             if (are_row_col_valid(board) && are_9_digits(board))
-                i++;
+            {
+                char *tmp_rows[9];
+                char tmp_data[9][9];
+                for (int r = 0; r < 9; r++) {
+                    tmp_rows[r] = tmp_data[r];
+                    for (int c = 0; c < 9; c++)
+                        tmp_data[r][c] = board[r][c];
+                }
+                if (solve(tmp_rows))
+                    i++;
+                else
+                    board[random_x][random_y] = '0';
+            }
             else
+            {
                 board[random_x][random_y] = '0';
+            }
         }
+        print_progression(num_cells, i);
     }
-
+    printf("\n\n");
     return board;
 }

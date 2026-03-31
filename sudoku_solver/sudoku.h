@@ -17,12 +17,12 @@
 #  define LINES 9
 # endif
 
-void	read_and_store(int fd, char ***board);
 bool are_9_digits(char **board);
 bool are_row_col_valid(char **board);
 int find_empty_cell(char **board, int *x, int *y);
 int solve(char **board);
-char **sudoku_maker();
+char **sudoku_maker(char *arg);
+void print_board(char **board);
 
 
 

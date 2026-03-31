@@ -29,7 +29,7 @@ int solve(char **board)
     int num = 1;
     if (!find_empty_cell(board, &x, &y))
         return 1;
-    while( num <= 9)
+    while(num <= 9)
     {
         board[x][y] = num + '0';
         if (are_9_digits(board) && are_row_col_valid(board))
@@ -55,13 +55,11 @@ void print_board(char **board)
     printf("\n");
 }
 
-
-
-int main(void)
+int main(int ac, char **av)
 {
     char **board;
     srand(time(NULL));
-    board = sudoku_maker();
+    board = sudoku_maker(ac >= 2 ? av[1] : NULL);
     print_board(board);
     if (solve(board))
         printf("Le Sudoku est résolu !\n");
