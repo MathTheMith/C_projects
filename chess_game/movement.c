@@ -11,7 +11,7 @@ bool is_valid_rook_move(Texture2D board[BOARD_SIZE][BOARD_SIZE], int old_x, int 
             if (!is_valid_move(i, old_y, board)) return false;
             i += step;
         }
-        return is_valid_move(new_x, new_y, board);
+        return is_valid_move(new_x, new_y, board) || can_capture(board, new_x, new_y, old_x, old_y);
     }
     // Mouvement vertical
     if (old_x == new_x) {
@@ -21,7 +21,7 @@ bool is_valid_rook_move(Texture2D board[BOARD_SIZE][BOARD_SIZE], int old_x, int 
             if (!is_valid_move(old_x, j, board)) return false;
             j += step;
         }
-        return is_valid_move(new_x, new_y, board);
+        return is_valid_move(new_x, new_y, board) || can_capture(board, new_x, new_y, old_x, old_y);
     }
     return false;
 }
@@ -45,9 +45,10 @@ bool is_valid_bishop_move(Texture2D board[BOARD_SIZE][BOARD_SIZE], int old_x, in
         j += step_y;
     }
     
-    return is_valid_move(new_x, new_y, board);
+    return is_valid_move(new_x, new_y, board) || can_capture(board, new_x, new_y, old_x, old_y);
 }
 
+#include "unistd.h"
 bool is_valid_knight_move(Texture2D board[BOARD_SIZE][BOARD_SIZE], int old_x, int old_y, int new_x, int new_y) {
     int dx = new_x - old_x;
     int dy = new_y - old_y;
@@ -57,9 +58,9 @@ bool is_valid_knight_move(Texture2D board[BOARD_SIZE][BOARD_SIZE], int old_x, in
         (dx == -2 && dy == 1) || (dx == -2 && dy == -1) ||
         (dx == 1 && dy == 2) || (dx == 1 && dy == -2) ||
         (dx == -1 && dy == 2) || (dx == -1 && dy == -2)) {
-        return is_valid_move(new_x, new_y, board);
+        return is_valid_move(new_x, new_y, board) || can_capture(board, new_x, new_y, old_x, old_y);
     }
-    
+
     return false;
 }
 
@@ -75,7 +76,7 @@ bool is_valid_king_move(Texture2D board[BOARD_SIZE][BOARD_SIZE], int old_x, int 
     
     // Le roi peut bouger d'une case dans toutes les directions
     if (dx >= -1 && dx <= 1 && dy >= -1 && dy <= 1 && !(dx == 0 && dy == 0)) {
-        return is_valid_move(new_x, new_y, board);
+        return is_valid_move(new_x, new_y, board) || can_capture(board, new_x, new_y, old_x, old_y);
     }
     
     return false;
@@ -140,6 +141,8 @@ bool is_valid_bpawn_move(Texture2D board[BOARD_SIZE][BOARD_SIZE], int old_x, int
     
     return false;
 }
+
+#include "unistd.h"
 
 bool is_valid_destination(Texture2D board[BOARD_SIZE][BOARD_SIZE], int old_x, int old_y, int new_x, int new_y) {
     if (board[old_x][old_y].id == wR.id || board[old_x][old_y].id == bR.id) {

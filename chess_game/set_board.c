@@ -5,11 +5,9 @@ Texture2D wR, bR, wN, bN, wB, bB, wK, bK, wQ, bQ, wP, bP;
 bool is_piece_on_square(Texture2D board[BOARD_SIZE][BOARD_SIZE], int x, int y) {
     return board[x][y].id != 0;
 }
-
 void set_board(Texture2D board[BOARD_SIZE][BOARD_SIZE]) {
     Color lightBrown = (Color){181, 135, 99, 255};
     Color lightBeige = (Color){240, 218, 181, 255};
-    Color lightBlack = (Color){22, 21, 17, 220};
 
     Texture2D current_piece = {0};
 
@@ -34,16 +32,24 @@ void set_board(Texture2D board[BOARD_SIZE][BOARD_SIZE]) {
             int j = 0;
             while (j < BOARD_SIZE) {
                 Color color = ((i + j) % 2 == 0) ? lightBrown : lightBeige;
-                    DrawRectangle(i * 100, j * 100, 100, 100, color);
-                if (is_piece_on_square(board, i, j)) {
-                    DrawTexture(board[i][j], i * 100, j * 100, WHITE);
-                }
+                DrawRectangle(i * 100, j * 100, 100, 100, color);
                 j++;
             }
             i++;
         }
         if (is_piece == 1) {
             show_possibles_moves(board, old_x, old_y);
+        }
+        i = 0;
+        while (i < BOARD_SIZE) {
+            int j = 0;
+            while (j < BOARD_SIZE) {
+                if (is_piece_on_square(board, i, j)) {
+                    DrawTexture(board[i][j], i * 100, j * 100, WHITE);
+                }
+                j++;
+            }
+            i++;
         }
         if (CheckCollisionPointRec(mousePos, (Rectangle){x * 100, y * 100, 100, 100}) && IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
             
@@ -88,6 +94,15 @@ void set_board(Texture2D board[BOARD_SIZE][BOARD_SIZE]) {
                 else {
                     is_piece = 0;
                 }
+            }
+            bool wK_found = false, bK_found = false;
+            for (int ci = 0; ci < BOARD_SIZE; ci++)
+                for (int cj = 0; cj < BOARD_SIZE; cj++) {
+                    if (board[ci][cj].id == wK.id) wK_found = true;
+                    if (board[ci][cj].id == bK.id) bK_found = true;
+                }
+            if (!wK_found || !bK_found) {
+                break;
             }
         }
 
