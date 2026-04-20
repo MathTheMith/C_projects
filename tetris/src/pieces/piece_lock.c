@@ -1,16 +1,12 @@
 #include "pieces.h"
 
-void lock_piece(char **map, Piece *piece)
+int lock_piece(char **map, Piece *piece)
 {
     int colonne = (piece->x - 215) / SIZE_SQUARE;
     int ligne = (piece->y - 100) / SIZE_SQUARE;
-    
+
     if (!is_position_valid(map, piece))
-    {
-        printf("Erreur: position invalide!\n");
-        return;
-    }
-    
+        return -1;
     if (piece->type == 0) // I
     {
         if (piece->rotation == 0 || piece->rotation == 2)
@@ -27,7 +23,7 @@ void lock_piece(char **map, Piece *piece)
             map[ligne][colonne] = 2;
             map[ligne + 1][colonne] = 2;
         }
-        return;
+        return 0;
     }
     
     if (piece->type == 1) // O
@@ -36,7 +32,7 @@ void lock_piece(char **map, Piece *piece)
         map[ligne - 1][colonne] = 1;
         map[ligne][colonne - 1] = 1;
         map[ligne][colonne] = 1;
-        return;
+        return 0;
     }
     
     if (piece->type == 2) // T
@@ -68,7 +64,7 @@ void lock_piece(char **map, Piece *piece)
                 map[ligne + 1][colonne] = 3;
                 break;
         }
-        return;
+        return 0;
     }
     
     if (piece->type == 3) // S
@@ -87,7 +83,7 @@ void lock_piece(char **map, Piece *piece)
             map[ligne][colonne + 1] = 4;
             map[ligne + 1][colonne + 1] = 4;
         }
-        return;
+        return 0;
     }
     
     if (piece->type == 4) // Z
@@ -106,7 +102,7 @@ void lock_piece(char **map, Piece *piece)
             map[ligne][colonne + 1] = 5;
             map[ligne + 1][colonne] = 5;
         }
-        return;
+        return 0;
     }
     
     if (piece->type == 5) // L
@@ -138,7 +134,7 @@ void lock_piece(char **map, Piece *piece)
                 map[ligne + 1][colonne] = 6;
                 break;
         }
-        return;
+        return 0;
     }
     
     if (piece->type == 6) // J
@@ -170,6 +166,7 @@ void lock_piece(char **map, Piece *piece)
                 map[ligne + 1][colonne - 1] = 7;
                 break;
         }
-        return;
+        return 0;
     }
+    return 0;
 }

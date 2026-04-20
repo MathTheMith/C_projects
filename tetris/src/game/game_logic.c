@@ -15,6 +15,7 @@ GameState* init_game(void)
     state->frame_counter = 0;
     state->score = 0;
     state->gamepad_id = 0;
+    state->game_over = 0;
     
     // Détection manette
     for (int i = 0; i < 4; i++)
@@ -52,24 +53,33 @@ void free_game(GameState *state)
 void update_game(GameState *state)
 {
     handle_input(state);
-    
+
     get_next_queue(next_queue, 5);
     draw_map(state->map);
     draw_ui(state, next_queue);
+    draw_ghost_piece(state->map, &state->current);
     draw_piece(&state->current);
-    
+
     state->frame_counter++;
 }
 
-int check_game_over(char **map)
+int check_game_over(GameState *state)
 {
+    if (state->game_over)
+        return 1;
     for (int j = 0; j < MAP_WIDTH; j++)
     {
-        if (map[0][j] != 0)
-        {
-            printf("GAME OVER! Final Score: \n");
+        if (state->map[0][j] != 0)
             return 1;
-        }
     }
     return 0;
+}
+
+void draw_game_over_screen(int score)
+{
+    DrawRectangle(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT, (Color){0, 0, 0, 180});
+    DrawText("GAME OVER", 210, 380, 80, RED);
+    DrawText(TextFormat("Score final : %d", score), 280, 480, 35, WHITE);
+    DrawText("R  - Recommencer", 295, 560, 28, LIGHTGRAY);
+    DrawText("ESC - Quitter", 320, 600, 28, LIGHTGRAY);
 }

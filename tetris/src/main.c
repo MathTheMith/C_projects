@@ -19,7 +19,7 @@ int main(void)
         BeginDrawing();
         ClearBackground(BLACK);
         draw_grid();
-        
+
         if (start_delay > 0)
         {
             int seconds = (start_delay / 120) + 1;
@@ -30,12 +30,22 @@ int main(void)
             EndDrawing();
             continue;
         }
-        
+
+        if (check_game_over(game))
+        {
+            draw_map(game->map);
+            draw_game_over_screen(game->score);
+            EndDrawing();
+            if (IsKeyPressed(KEY_R))
+            {
+                free_game(game);
+                game = init_game();
+                start_delay = 360;
+            }
+            continue;
+        }
+
         update_game(game);
-        
-        if (check_game_over(game->map))
-            break;
-        
         EndDrawing();
     }
     

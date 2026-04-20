@@ -27,6 +27,7 @@ typedef struct {
     int frame_counter;
     int score;
     int gamepad_id;
+    int game_over;
 } GameState;
 
 #endif

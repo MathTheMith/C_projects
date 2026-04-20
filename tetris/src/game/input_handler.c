@@ -7,6 +7,19 @@ static int move_counter = 0;
 static int lock_delay = 0;
 static int is_grounded = 0;
 
+static void spawn_next(GameState *state)
+{
+    state->current.type = get_next_piece();
+    state->current.x = 395;
+    state->current.y = 150;
+    state->current.rotation = 0;
+    state->can_hold = 1;
+    is_grounded = 0;
+    lock_delay = 0;
+    if (!is_position_valid(state->map, &state->current))
+        state->game_over = 1;
+}
+
 void handle_input(GameState *state)
 {
     int gp = state->gamepad_id;
@@ -64,17 +77,14 @@ void handle_input(GameState *state)
         while (can_move(state->map, &state->current, 'd'))
             state->current.y += SIZE_SQUARE;
         
-        lock_piece(state->map, &state->current);
+        if (lock_piece(state->map, &state->current) == -1)
+        {
+            state->game_over = 1;
+            return;
+        }
         int lines = check_and_clear_lines(state->map);
         state->score += lines * 100;
-        
-        state->current.type = get_next_piece();
-        state->current.x = 395;
-        state->current.y = 150;
-        state->current.rotation = 0;
-        state->can_hold = 1;
-        is_grounded = 0;
-        lock_delay = 0;
+        spawn_next(state);
         return;
     }
     
@@ -129,17 +139,14 @@ void handle_input(GameState *state)
     {
         if (lock_delay >= 60)
         {
-            lock_piece(state->map, &state->current);
+            if (lock_piece(state->map, &state->current) == -1)
+            {
+                state->game_over = 1;
+                return;
+            }
             int lines = check_and_clear_lines(state->map);
             state->score += lines * 100;
-            
-            state->current.type = get_next_piece();
-            state->current.x = 395;
-            state->current.y = 150;
-            state->current.rotation = 0;
-            state->can_hold = 1;
-            is_grounded = 0;
-            lock_delay = 0;
+            spawn_next(state);
         }
         else
         {
