@@ -1,6 +1,6 @@
 #include "chess_game.h"
 
-void init_board(Texture2D board[BOARD_SIZE][BOARD_SIZE])
+void init_board(int board[BOARD_SIZE][BOARD_SIZE])
 {
     wP = LoadTexture("./Images/wP.png");
     bP = LoadTexture("./Images/bP.png");
@@ -14,26 +14,61 @@ void init_board(Texture2D board[BOARD_SIZE][BOARD_SIZE])
     bK = LoadTexture("./Images/bK.png");
     wQ = LoadTexture("./Images/wQ.png");
     bQ = LoadTexture("./Images/bQ.png");
-    
-    board[0][7] = wR; board[7][7] = wR;
-    board[1][7] = wN; board[6][7] = wN;
-    board[2][7] = wB; board[5][7] = wB;
-    board[3][7] = wQ; board[4][7] = wK;
 
-    board[0][0] = bR; board[7][0] = bR;
-    board[1][0] = bN; board[6][0] = bN;
-    board[2][0] = bB; board[5][0] = bB;
-    board[3][0] = bQ; board[4][0] = bK;
+    board[0][7] = WR; board[7][7] = WR;
+    board[1][7] = WN; board[6][7] = WN;
+    board[2][7] = WB; board[5][7] = WB;
+    board[3][7] = WQ; board[4][7] = WK;
+
+    board[0][0] = BR; board[7][0] = BR;
+    board[1][0] = BN; board[6][0] = BN;
+    board[2][0] = BB; board[5][0] = BB;
+    board[3][0] = BQ; board[4][0] = BK;
 
     int i = 0;
     while (i < 8) {
-        board[i][6] = wP;
+        board[i][6] = WP;
         i++;
     }
-    
+
     int j = 0;
     while (j < 8) {
-        board[j][1] = bP;
+        board[j][1] = BP;
         j++;
     }
+}
+
+
+Texture2D get_texture(int piece) {
+    switch (piece) {
+        case WP: return wP;
+        case WR: return wR;
+        case WN: return wN;
+        case WB: return wB;
+        case WQ: return wQ;
+        case WK: return wK;
+        case BP: return bP;
+        case BR: return bR;
+        case BN: return bN;
+        case BB: return bB;
+        case BQ: return bQ;
+        case BK: return bK;
+        default: return (Texture2D){0};
+    }
+}
+
+void UnloadTextures()
+{
+    UnloadTexture(wP);
+    UnloadTexture(bP);
+    UnloadTexture(wR);
+    UnloadTexture(bR);
+    UnloadTexture(wN);
+    UnloadTexture(bN);
+    UnloadTexture(wB);
+    UnloadTexture(bB);
+    UnloadTexture(wK);
+    UnloadTexture(bK);
+    UnloadTexture(wQ);
+    UnloadTexture(bQ);
 }

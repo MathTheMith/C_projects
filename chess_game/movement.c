@@ -1,210 +1,158 @@
 #include "chess_game.h"
+#include <stdlib.h>
 
-#include "chess_game.h"
+bool is_valid_rook_move(int board[BOARD_SIZE][BOARD_SIZE], int old_x, int old_y, int new_x, int new_y)
+{
+    if (old_x != new_x && old_y != new_y) return false;
 
-bool is_valid_rook_move(Texture2D board[BOARD_SIZE][BOARD_SIZE], int old_x, int old_y, int new_x, int new_y) {
-    // Mouvement horizontal
-    if (old_y == new_y) {
-        int step = (new_x > old_x) ? 1 : -1;
-        int i = old_x + step;
-        while (i != new_x) {
-            if (!is_valid_move(i, old_y, board)) return false;
-            i += step;
-        }
-        return is_valid_move(new_x, new_y, board) || can_capture(board, new_x, new_y, old_x, old_y);
+    int step_x = (new_x > old_x) ? 1 : (new_x < old_x) ? -1 : 0;
+    int step_y = (new_y > old_y) ? 1 : (new_y < old_y) ? -1 : 0;
+
+    int x = old_x + step_x;
+    int y = old_y + step_y;
+
+    while (x != new_x || y != new_y)
+    {
+        if (board[x][y] != EMPTY) return false;
+        x += step_x;
+        y += step_y;
     }
-    // Mouvement vertical
-    if (old_x == new_x) {
-        int step = (new_y > old_y) ? 1 : -1;
-        int j = old_y + step;
-        while (j != new_y) {
-            if (!is_valid_move(old_x, j, board)) return false;
-            j += step;
-        }
-        return is_valid_move(new_x, new_y, board) || can_capture(board, new_x, new_y, old_x, old_y);
-    }
-    return false;
+
+    if (board[new_x][new_y] == EMPTY) return true;
+    return can_capture(board, new_x, new_y, old_x, old_y);
 }
 
-bool is_valid_bishop_move(Texture2D board[BOARD_SIZE][BOARD_SIZE], int old_x, int old_y, int new_x, int new_y) {
+bool is_valid_bishop_move(int board[BOARD_SIZE][BOARD_SIZE], int old_x, int old_y, int new_x, int new_y)
+{
     int dx = new_x - old_x;
     int dy = new_y - old_y;
-    
-    // Vérifier si c'est un mouvement diagonal
-    if (dx * dx != dy * dy) return false;
-    
+
+    if (abs(dx) != abs(dy)) return false;
+
     int step_x = (dx > 0) ? 1 : -1;
     int step_y = (dy > 0) ? 1 : -1;
-    
-    int i = old_x + step_x;
-    int j = old_y + step_y;
-    
-    while (i != new_x && j != new_y) {
-        if (!is_valid_move(i, j, board)) return false;
-        i += step_x;
-        j += step_y;
-    }
-    
-    return is_valid_move(new_x, new_y, board) || can_capture(board, new_x, new_y, old_x, old_y);
-}
 
-#include "unistd.h"
-bool is_valid_knight_move(Texture2D board[BOARD_SIZE][BOARD_SIZE], int old_x, int old_y, int new_x, int new_y) {
-    int dx = new_x - old_x;
-    int dy = new_y - old_y;
-    
-    // Vérifier les 8 positions possibles du cavalier
-    if ((dx == 2 && dy == 1) || (dx == 2 && dy == -1) ||
-        (dx == -2 && dy == 1) || (dx == -2 && dy == -1) ||
-        (dx == 1 && dy == 2) || (dx == 1 && dy == -2) ||
-        (dx == -1 && dy == 2) || (dx == -1 && dy == -2)) {
-        return is_valid_move(new_x, new_y, board) || can_capture(board, new_x, new_y, old_x, old_y);
+    int x = old_x + step_x;
+    int y = old_y + step_y;
+
+    while (x != new_x && y != new_y)
+    {
+        if (board[x][y] != EMPTY) return false;
+        x += step_x;
+        y += step_y;
     }
 
-    return false;
+    if (board[new_x][new_y] == EMPTY) return true;
+    return can_capture(board, new_x, new_y, old_x, old_y);
 }
 
-bool is_valid_queen_move(Texture2D board[BOARD_SIZE][BOARD_SIZE], int old_x, int old_y, int new_x, int new_y) {
-    // La reine peut bouger comme une tour ou un fou
-    return is_valid_rook_move(board, old_x, old_y, new_x, new_y) || 
+bool is_valid_queen_move(int board[BOARD_SIZE][BOARD_SIZE], int old_x, int old_y, int new_x, int new_y)
+{
+    return is_valid_rook_move(board, old_x, old_y, new_x, new_y) ||
            is_valid_bishop_move(board, old_x, old_y, new_x, new_y);
 }
 
-bool is_valid_king_move(Texture2D board[BOARD_SIZE][BOARD_SIZE], int old_x, int old_y, int new_x, int new_y) {
-    int dx = new_x - old_x;
-    int dy = new_y - old_y;
-    
-    // Le roi peut bouger d'une case dans toutes les directions
-    if (dx >= -1 && dx <= 1 && dy >= -1 && dy <= 1 && !(dx == 0 && dy == 0)) {
-        return is_valid_move(new_x, new_y, board) || can_capture(board, new_x, new_y, old_x, old_y);
-    }
-    
-    return false;
-}
-
-bool is_valid_wpawn_move(Texture2D board[BOARD_SIZE][BOARD_SIZE], int old_x, int old_y, int new_x, int new_y) {
-    // Mouvement vers le haut (y diminue)
-    if (new_x == old_x) {
-        // Un pas en avant
-        if (new_y == old_y - 1 && is_valid_move(new_x, new_y, board)) {
-            return true;
-        }
-        // Deux pas depuis la position initiale
-        if (old_y == 6 && new_y == old_y - 2 && 
-            is_valid_move(new_x, new_y, board) && 
-            is_valid_move(new_x, old_y - 1, board)) {
-            return true;
-        }
-    }
-    
-    // Capture en diagonale
-    if ((new_x == old_x + 1 || new_x == old_x - 1) && new_y == old_y - 1) {
-        if (board[new_x][new_y].id != 0) {
-            // Vérifier que c'est une pièce noire
-            if (board[new_x][new_y].id == bR.id || board[new_x][new_y].id == bN.id ||
-                board[new_x][new_y].id == bB.id || board[new_x][new_y].id == bK.id ||
-                board[new_x][new_y].id == bQ.id || board[new_x][new_y].id == bP.id) {
-                return true;
-            }
-        }
-    }
-    
-    return false;
-}
-
-bool is_valid_bpawn_move(Texture2D board[BOARD_SIZE][BOARD_SIZE], int old_x, int old_y, int new_x, int new_y) {
-    // Mouvement vers le bas (y augmente)
-    if (new_x == old_x) {
-        // Un pas en avant
-        if (new_y == old_y + 1 && is_valid_move(new_x, new_y, board)) {
-            return true;
-        }
-        // Deux pas depuis la position initiale
-        if (old_y == 1 && new_y == old_y + 2 && 
-            is_valid_move(new_x, new_y, board) && 
-            is_valid_move(new_x, old_y + 1, board)) {
-            return true;
-        }
-    }
-    
-    // Capture en diagonale
-    if ((new_x == old_x + 1 || new_x == old_x - 1) && new_y == old_y + 1) {
-        if (board[new_x][new_y].id != 0) {
-            // Vérifier que c'est une pièce blanche
-            if (board[new_x][new_y].id == wR.id || board[new_x][new_y].id == wN.id ||
-                board[new_x][new_y].id == wB.id || board[new_x][new_y].id == wK.id ||
-                board[new_x][new_y].id == wQ.id || board[new_x][new_y].id == wP.id) {
-                return true;
-            }
-        }
-    }
-    
-    return false;
-}
-
-#include "unistd.h"
-
-bool is_valid_destination(Texture2D board[BOARD_SIZE][BOARD_SIZE], int old_x, int old_y, int new_x, int new_y) {
-    if (board[old_x][old_y].id == wR.id || board[old_x][old_y].id == bR.id) {
-        return is_valid_rook_move(board, old_x, old_y, new_x, new_y);
-    }
-    if (board[old_x][old_y].id == wB.id || board[old_x][old_y].id == bB.id) {
-        return is_valid_bishop_move(board, old_x, old_y, new_x, new_y);
-    }
-    if (board[old_x][old_y].id == wN.id || board[old_x][old_y].id == bN.id) {
-        return is_valid_knight_move(board, old_x, old_y, new_x, new_y);
-    }
-    if (board[old_x][old_y].id == wQ.id || board[old_x][old_y].id == bQ.id) {
-        return is_valid_queen_move(board, old_x, old_y, new_x, new_y);
-    }
-    if (board[old_x][old_y].id == wK.id || board[old_x][old_y].id == bK.id) {
-        return is_valid_king_move(board, old_x, old_y, new_x, new_y);
-    }
-    if (board[old_x][old_y].id == wP.id) {
-        return is_valid_wpawn_move(board, old_x, old_y, new_x, new_y);
-    }
-    if (board[old_x][old_y].id == bP.id) {
-        return is_valid_bpawn_move(board, old_x, old_y, new_x, new_y);
-    }
-    
-    return false;
-}
-
-bool can_capture(Texture2D board[BOARD_SIZE][BOARD_SIZE], int x, int y, int old_x, int old_y)
+bool is_valid_knight_move(int board[BOARD_SIZE][BOARD_SIZE], int old_x, int old_y, int new_x, int new_y)
 {
-    bool is_selected_white = (board[old_x][old_y].id == wR.id || 
-                            board[old_x][old_y].id == wN.id || 
-                            board[old_x][old_y].id == wB.id || 
-                            board[old_x][old_y].id == wK.id || 
-                            board[old_x][old_y].id == wQ.id ||
-                            board[old_x][old_y].id == wP.id);
+    int dx = abs(new_x - old_x);
+    int dy = abs(new_y - old_y);
 
-    bool is_target_black = (board[x][y].id == bR.id || 
-                          board[x][y].id == bN.id || 
-                          board[x][y].id == bB.id || 
-                          board[x][y].id == bK.id || 
-                          board[x][y].id == bQ.id ||
-                          board[x][y].id == bP.id);
+    if (!((dx == 2 && dy == 1) || (dx == 1 && dy == 2))) return false;
 
-    bool is_selected_black = (board[old_x][old_y].id == bR.id || 
-                            board[old_x][old_y].id == bN.id || 
-                            board[old_x][old_y].id == bB.id || 
-                            board[old_x][old_y].id == bK.id || 
-                            board[old_x][old_y].id == bQ.id ||
-                            board[old_x][old_y].id == bP.id);
+    if (board[new_x][new_y] == EMPTY) return true;
+    return can_capture(board, new_x, new_y, old_x, old_y);
+}
 
-    bool is_target_white = (board[x][y].id == wR.id || 
-                          board[x][y].id == wN.id || 
-                          board[x][y].id == wB.id || 
-                          board[x][y].id == wK.id || 
-                          board[x][y].id == wQ.id ||
-                          board[x][y].id == wP.id);
+bool is_valid_king_move(int board[BOARD_SIZE][BOARD_SIZE], int old_x, int old_y, int new_x, int new_y)
+{
+    int dx = abs(new_x - old_x);
+    int dy = abs(new_y - old_y);
 
-    if (is_selected_white && is_target_black)
-        return true;
+    if (dx > 1 || dy > 1 || (dx == 0 && dy == 0)) return false;
 
-    if (is_selected_black && is_target_white)
-        return true;
+    if (board[new_x][new_y] == EMPTY) return true;
+    return can_capture(board, new_x, new_y, old_x, old_y);
+}
 
+bool is_valid_wpawn_move(int board[BOARD_SIZE][BOARD_SIZE], int old_x, int old_y, int new_x, int new_y)
+{
+    if (new_x == old_x)
+    {
+        if (new_y == old_y - 1 && is_valid_move(new_x, new_y, board))
+        {
+            return true;
+        }
+        if (old_y == 6 && new_y == old_y - 2 &&
+            is_valid_move(new_x, new_y, board) &&
+            is_valid_move(new_x, old_y - 1, board))
+        {
+            return true;
+        }
+    }
+
+    if ((new_x == old_x + 1 || new_x == old_x - 1) && new_y == old_y - 1)
+    {
+        if (board[new_x][new_y] < 0)
+            return true;
+    }
+
+    return false;
+}
+
+bool is_valid_bpawn_move(int board[BOARD_SIZE][BOARD_SIZE], int old_x, int old_y, int new_x, int new_y)
+{
+    if (new_x == old_x)
+    {
+        if (new_y == old_y + 1 && is_valid_move(new_x, new_y, board))
+        {
+            return true;
+        }
+        if (old_y == 1 && new_y == old_y + 2 &&
+            is_valid_move(new_x, new_y, board) &&
+            is_valid_move(new_x, old_y + 1, board))
+        {
+            return true;
+        }
+    }
+
+    if ((new_x == old_x + 1 || new_x == old_x - 1) && new_y == old_y + 1)
+    {
+        if (board[new_x][new_y] > 0)
+            return true;
+    }
+
+    return false;
+}
+
+bool is_valid_destination(int board[BOARD_SIZE][BOARD_SIZE], int old_x, int old_y, int new_x, int new_y)
+{
+    if (board[old_x][old_y] == WR || board[old_x][old_y] == BR)
+        return is_valid_rook_move(board, old_x, old_y, new_x, new_y);
+
+    if (board[old_x][old_y] == WB || board[old_x][old_y] == BB)
+        return is_valid_bishop_move(board, old_x, old_y, new_x, new_y);
+
+    if (board[old_x][old_y] == WN || board[old_x][old_y] == BN)
+        return is_valid_knight_move(board, old_x, old_y, new_x, new_y);
+
+    if (board[old_x][old_y] == WQ || board[old_x][old_y] == BQ)
+        return is_valid_queen_move(board, old_x, old_y, new_x, new_y);
+
+    if (board[old_x][old_y] == WK || board[old_x][old_y] == BK)
+        return is_valid_king_move(board, old_x, old_y, new_x, new_y);
+
+    if (board[old_x][old_y] == WP)
+        return is_valid_wpawn_move(board, old_x, old_y, new_x, new_y);
+
+    if (board[old_x][old_y] == BP)
+        return is_valid_bpawn_move(board, old_x, old_y, new_x, new_y);
+
+    return false;
+}
+
+bool can_capture(int board[BOARD_SIZE][BOARD_SIZE], int x, int y, int old_x, int old_y)
+{
+    if (board[old_x][old_y] > 0 && board[x][y] < 0) return true;
+    if (board[old_x][old_y] < 0 && board[x][y] > 0) return true;
     return false;
 }

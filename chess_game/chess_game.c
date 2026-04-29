@@ -5,12 +5,10 @@ int main() {
     const int screenWidth = 800;
     const int screenHeight = 800;
 
-    InitWindow(screenWidth, screenHeight, "Jeu d'échecs");
+    InitWindow(screenWidth, screenHeight, "Chess game");
     SetTraceLogLevel(LOG_NONE);
     
-    Texture2D board[BOARD_SIZE][BOARD_SIZE] = {0};
-    
-    set_board(board);
+    set_board();
     
     CloseWindow();
     return 0;
