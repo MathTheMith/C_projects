@@ -15,14 +15,18 @@ static void draw_capture(int x, int y)
 
 void show_possibles_moves(t_game *game, int x, int y)
 {
-    int piece = get_piece(game, y * 8 + x);
-    if (piece == WR || piece == BR) show_rook_moves(game, x, y);
-    if (piece == WB || piece == BB) show_bishop_moves(game, x, y);
-    if (piece == WN || piece == BN) show_knight_moves(game, x, y);
-    if (piece == WQ || piece == BQ) show_queen_moves(game, x, y);
-    if (piece == WK || piece == BK) show_king_moves(game, x, y);
-    if (piece == WP) show_wpawns_moves(game, x, y);
-    if (piece == BP) show_bpawns_moves(game, x, y);
+    Color lightBlack = (Color){22, 21, 17, 100};
+    Color captureGrey = (Color){80, 80, 80, 75};
+
+    for (int ti = 0; ti < BOARD_SIZE; ti++) {
+        for (int tj = 0; tj < BOARD_SIZE; tj++) {
+            if (!is_valid_destination(game, x, y, ti, tj)) continue;
+            if (get_occupied_bb(game) & (1ULL << (tj * 8 + ti)))
+                DrawRectangle(ti * 100, tj * 100, 100, 100, captureGrey);
+            else
+                DrawCircle(ti * 100 + 50, tj * 100 + 50, 15, lightBlack);
+        }
+    }
 }
 
 void show_wpawns_moves(t_game *game, int x, int y)

@@ -22,39 +22,52 @@ DEP      = $(OBJ:%.o=%.d)
 
 TARGET   = chess
 
+# --- COLORS -----------------------------------------------------------
+
+RESET   = \033[0m
+BOLD    = \033[1m
+GREEN   = \033[32m
+CYAN    = \033[36m
+YELLOW  = \033[33m
+RED     = \033[31m
+
 # --- RULES ------------------------------------------------------------
 
 all: raylib $(TARGET)
+	@echo "$(BOLD)$(GREEN)All compiled$(RESET)"
 
 # Compilation des .o dans le dossier obj/
 $(OBJ_DIR)/%.o: %.c
 	@mkdir -p $(dir $@)
-	$(CC) $(CFLAGS) -c $< -o $@
+	@echo "$(CYAN)CC$(RESET)  $<"
+	@$(CC) $(CFLAGS) -c $< -o $@
 
 $(TARGET): $(OBJ)
-	$(CC) $(OBJ) -o $(TARGET) $(LDFLAGS) $(LDFLAGS_SAN)
+	@echo "$(YELLOW)LD$(RESET)  $(TARGET)"
+	@$(CC) $(OBJ) -o $(TARGET) $(LDFLAGS) $(LDFLAGS_SAN)
 
 # --- RAYLIB BUILD -----------------------------------------------------
 
 raylib:
 	@if [ ! -d "$(RAYLIB_DIR)" ]; then \
-		echo "===> Clonage de Raylib..."; \
+		echo "$(YELLOW)===> Clonage de Raylib...$(RESET)"; \
 		git clone https://github.com/raysan5/raylib.git $(RAYLIB_DIR); \
 	fi
 	@if [ ! -f "$(RAYLIB_DIR)/src/libraylib.a" ]; then \
-		echo "===> Compilation de Raylib..."; \
+		echo "$(YELLOW)===> Compilation de Raylib...$(RESET)"; \
 		$(MAKE) -C $(RAYLIB_DIR)/src PLATFORM=PLATFORM_DESKTOP; \
 	fi
 
 # --- CLEAN ------------------------------------------------------------
 
 clean:
-	rm -rf $(OBJ_DIR)
-	rm -f $(TARGET)
+	@echo "$(RED)RM$(RESET)  $(OBJ_DIR)/ $(TARGET)"
+	@rm -rf $(OBJ_DIR)
+	@rm -f $(TARGET)
 
 fclean: clean
-	@echo "===> Nettoyage complet (obj/, binaire, raylib)..."
-	rm -rf $(RAYLIB_DIR)
+	@echo "$(RED)RM$(RESET)  $(RAYLIB_DIR)/"
+	@rm -rf $(RAYLIB_DIR)
 
 re: fclean all
 

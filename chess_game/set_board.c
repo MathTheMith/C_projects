@@ -27,7 +27,8 @@ void draw_board(t_game *game)
 
 bool game_over(t_game *game)
 {
-    return game->wp.king == 0 || game->bp.king == 0;
+    if (game->wp.king == 0 || game->bp.king == 0) return true;
+    return !has_legal_moves(game);
 }
 
 static void apply_robot_move(t_game *game)

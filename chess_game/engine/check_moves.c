@@ -20,6 +20,7 @@ static int minimax(t_game *game, int depth, bool is_black, t_move *out)
         {
             for (int j = 0; j < BOARD_SIZE; j++)
             {
+                game->current_turn = is_black ? 1 : 0;
                 if (!is_valid_destination(game, x, y, i, j))
                     continue;
 
@@ -30,6 +31,7 @@ static int minimax(t_game *game, int depth, bool is_black, t_move *out)
                 game->old_y = y;
                 move_pieces(game, i, j);
 
+                game->current_turn = is_black ? 0 : 1;
                 int score = minimax(game, depth - 1, !is_black, NULL);
 
                 undo_move(game, piece, x, y, i, j, captured);

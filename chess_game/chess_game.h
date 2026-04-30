@@ -77,6 +77,8 @@ bool      is_valid_move(t_game *game, int x, int y);
 void      show_wpawns_moves(t_game *game, int x, int y);
 void      show_bpawns_moves(t_game *game, int x, int y);
 void      init_board();
+bool      is_in_check(t_game *game);
+bool      has_legal_moves(t_game *game);
 bool      is_valid_destination(t_game *game, int old_x, int old_y, int new_x, int new_y);
 bool      is_valid_rook_move(t_game *game, int old_x, int old_y, int new_x, int new_y);
 bool      is_valid_bishop_move(t_game *game, int old_x, int old_y, int new_x, int new_y);
