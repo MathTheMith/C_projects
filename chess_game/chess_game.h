@@ -3,6 +3,7 @@
 
 #include "raylib.h"
 #include <stdint.h>
+#include <stdbool.h>
 
 #define BOARD_SIZE 8
 
@@ -32,13 +33,12 @@ typedef struct {
 } t_bitboards;
 
 typedef struct {
-    int board[BOARD_SIZE][BOARD_SIZE];
     t_bitboards wp;
     t_bitboards bp;
     int current_piece;
     int current_turn;
     int is_piece;
-	int robot_color;
+    int robot_color;
     int old_x;
     int old_y;
 } t_game;
@@ -49,33 +49,48 @@ typedef struct {
     int captured;
 } t_move;
 
-bool is_piece_on_square(int board[BOARD_SIZE][BOARD_SIZE], int x, int y);
-bool can_capture(int board[BOARD_SIZE][BOARD_SIZE], int x, int y, int old_x, int old_y);
-void set_board();
-void show_possibles_moves(int board[BOARD_SIZE][BOARD_SIZE], int x, int y);
-void show_rook_moves(int x, int y, int board[BOARD_SIZE][BOARD_SIZE]);
-void show_bishop_moves(int x, int y, int board[BOARD_SIZE][BOARD_SIZE]);
-void show_queen_moves(int x, int y, int board[BOARD_SIZE][BOARD_SIZE]);
-void show_king_moves(int x, int y, int board[BOARD_SIZE][BOARD_SIZE]);
-void show_knight_moves(int x, int y, int board[BOARD_SIZE][BOARD_SIZE]);
-bool is_valid_move(int x, int y, int board[BOARD_SIZE][BOARD_SIZE]);
-void show_wpawns_moves(int x, int y, int board[BOARD_SIZE][BOARD_SIZE]);
-void show_bpawns_moves(int x, int y, int board[BOARD_SIZE][BOARD_SIZE]);
-void init_board(int board[BOARD_SIZE][BOARD_SIZE]);
-bool is_valid_destination(int board[BOARD_SIZE][BOARD_SIZE], int old_x, int old_y, int new_x, int new_y);
-bool is_valid_rook_move(int board[BOARD_SIZE][BOARD_SIZE], int old_x, int old_y, int new_x, int new_y);
-bool is_valid_bishop_move(int board[BOARD_SIZE][BOARD_SIZE], int old_x, int old_y, int new_x, int new_y);
-bool is_valid_knight_move(int board[BOARD_SIZE][BOARD_SIZE], int old_x, int old_y, int new_x, int new_y);
-bool is_valid_queen_move(int board[BOARD_SIZE][BOARD_SIZE], int old_x, int old_y, int new_x, int new_y);
-bool is_valid_king_move(int board[BOARD_SIZE][BOARD_SIZE], int old_x, int old_y, int new_x, int new_y);
-bool is_valid_wpawn_move(int board[BOARD_SIZE][BOARD_SIZE], int old_x, int old_y, int new_x, int new_y);
-bool is_valid_bpawn_move(int board[BOARD_SIZE][BOARD_SIZE], int old_x, int old_y, int new_x, int new_y);
+static inline uint64_t get_white_bb(t_game *game) {
+    return game->wp.pawns | game->wp.rooks | game->wp.knight
+         | game->wp.bishop | game->wp.queen | game->wp.king;
+}
+
+static inline uint64_t get_black_bb(t_game *game) {
+    return game->bp.pawns | game->bp.rooks | game->bp.knight
+         | game->bp.bishop | game->bp.queen | game->bp.king;
+}
+
+static inline uint64_t get_occupied_bb(t_game *game) {
+    return get_white_bb(game) | get_black_bb(game);
+}
+
+int       get_piece(t_game *game, int sq);
+bool      is_piece_on_square(t_game *game, int x, int y);
+bool      can_capture(t_game *game, int from_sq, int to_sq);
+void      set_board();
+void      show_possibles_moves(t_game *game, int x, int y);
+void      show_rook_moves(t_game *game, int x, int y);
+void      show_bishop_moves(t_game *game, int x, int y);
+void      show_queen_moves(t_game *game, int x, int y);
+void      show_king_moves(t_game *game, int x, int y);
+void      show_knight_moves(t_game *game, int x, int y);
+bool      is_valid_move(t_game *game, int x, int y);
+void      show_wpawns_moves(t_game *game, int x, int y);
+void      show_bpawns_moves(t_game *game, int x, int y);
+void      init_board();
+bool      is_valid_destination(t_game *game, int old_x, int old_y, int new_x, int new_y);
+bool      is_valid_rook_move(t_game *game, int old_x, int old_y, int new_x, int new_y);
+bool      is_valid_bishop_move(t_game *game, int old_x, int old_y, int new_x, int new_y);
+bool      is_valid_knight_move(t_game *game, int old_x, int old_y, int new_x, int new_y);
+bool      is_valid_queen_move(t_game *game, int old_x, int old_y, int new_x, int new_y);
+bool      is_valid_king_move(t_game *game, int old_x, int old_y, int new_x, int new_y);
+bool      is_valid_wpawn_move(t_game *game, int old_x, int old_y, int new_x, int new_y);
+bool      is_valid_bpawn_move(t_game *game, int old_x, int old_y, int new_x, int new_y);
 Texture2D get_texture(int piece);
-void UnloadTextures();
-bool game_over(int board[BOARD_SIZE][BOARD_SIZE]);
-void move_pieces(t_game *game, int x, int y);
-void undo_move(t_game *game, int piece, int from_x, int from_y, int to_x, int to_y, int captured);
-int evaluate(t_game *game);
-t_move generate_moves(t_game *game);
+void      UnloadTextures();
+bool      game_over(t_game *game);
+void      move_pieces(t_game *game, int x, int y);
+void      undo_move(t_game *game, int piece, int from_x, int from_y, int to_x, int to_y, int captured);
+int       evaluate(t_game *game);
+t_move    generate_moves(t_game *game);
 
 #endif

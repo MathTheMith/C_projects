@@ -1,0 +1,28 @@
+  Trouver des bits                                                            
+  - __builtin_ctzll(x) — index du bit le plus bas (least significant set bit) 
+  - __builtin_clzll(x) — nombre de zéros en tête (bit le plus haut)           
+  - __builtin_popcountll(x) — nombre de bits à 1                   
+                                                                              
+  Itérer sur tous les bits à 1                                                
+  while (pieces) {                                                            
+      int sq = __builtin_ctzll(pieces);  // position du prochain bit          
+      // ... faire quelque chose avec sq                                      
+      pieces &= pieces - 1;  // enlever le bit le plus bas                    
+  }                                                                           
+                                                                              
+  Manipuler des bits                     
+  - 1ULL << sq — créer un masque pour la case sq                              
+  - bb |= 1ULL << sq — ajouter une case                                       
+  - bb &= ~(1ULL << sq) — enlever une case
+  - bb ^= 1ULL << sq — toggle une case                                        
+                                      
+  Masques utiles pour les rays                                                
+  - bb & (bb - 1) — enlève le bit le plus bas (même chose que pieces &= pieces
+   - 1)                                                                       
+  - bb & -bb — garde seulement le bit le plus bas (isoler une pièce)          
+        
+  int sq = y * 8 + x;                                                         
+                                                                              
+  Et l'inverse pour afficher :                                                
+  int x = sq % 8;                     
+  int y = sq / 8;

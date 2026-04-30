@@ -21,22 +21,18 @@ t_move generate_moves(t_game *game)
         {
             for (int j = 0; j < BOARD_SIZE; j++)
             {
-                if (!is_valid_destination(game->board, x, y, i, j))
+                if (!is_valid_destination(game, x, y, i, j))
                     continue;
 
-                int piece    = game->board[x][y];
-                int captured = game->board[i][j];
+                int piece    = get_piece(game, y * 8 + x);
+                int captured = get_piece(game, j * 8 + i);
 
                 game->old_x = x;
                 game->old_y = y;
                 move_pieces(game, i, j);
-                game->board[i][j] = piece;
-                game->board[x][y] = EMPTY;
 
                 int score = minimax(game, DEPTH, false);
 
-                game->board[x][y] = piece;
-                game->board[i][j] = captured;
                 undo_move(game, piece, x, y, i, j, captured);
 
                 if (score < best_score) {
@@ -77,22 +73,18 @@ int minimax(t_game *game, int depth, bool is_black)
         {
             for (int j = 0; j < BOARD_SIZE; j++)
             {
-                if (!is_valid_destination(game->board, x, y, i, j))
+                if (!is_valid_destination(game, x, y, i, j))
                     continue;
 
-                int piece    = game->board[x][y];
-                int captured = game->board[i][j];
+                int piece    = get_piece(game, y * 8 + x);
+                int captured = get_piece(game, j * 8 + i);
 
                 game->old_x = x;
                 game->old_y = y;
                 move_pieces(game, i, j);
-                game->board[i][j] = piece;
-                game->board[x][y] = EMPTY;
 
                 int score = minimax(game, depth - 1, !is_black);
 
-                game->board[x][y] = piece;
-                game->board[i][j] = captured;
                 undo_move(game, piece, x, y, i, j, captured);
                 if (is_black && score < best_score) best_score = score;
                 if (!is_black && score > best_score) best_score = score;
