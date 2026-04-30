@@ -1,14 +1,22 @@
 # --- CONFIGURATION ----------------------------------------------------
 
 CC       = gcc
-CFLAGS   = -Wall -Wextra -std=c99 -Iraylib/src
+CFLAGS   = -Wall -Wextra -std=c99 -Iraylib/src -g -fsanitize=address
+LDFLAGS_SAN = -fsanitize=address
 LDFLAGS  = -Lraylib/src -lraylib -lm -ldl -lpthread -lGL -lrt -lX11
 
 SRC_DIR  = .
 OBJ_DIR  = obj
 RAYLIB_DIR = raylib
 
-SRC      = chess_game.c set_board.c show_moves.c movement.c init_game.c
+SRC      = chess_game.c \
+			 set_board.c \
+			 show_moves.c \
+			 movement.c \
+			 init_game.c \
+			 engine/init_engine.c \
+			 engine/check_moves.c \
+
 OBJ      = $(SRC:%.c=$(OBJ_DIR)/%.o)
 
 TARGET   = chess
@@ -19,11 +27,11 @@ all: raylib $(TARGET)
 
 # Compilation des .o dans le dossier obj/
 $(OBJ_DIR)/%.o: %.c
-	@mkdir -p $(OBJ_DIR)
+	@mkdir -p $(dir $@)
 	$(CC) $(CFLAGS) -c $< -o $@
 
 $(TARGET): $(OBJ)
-	$(CC) $(OBJ) -o $(TARGET) $(LDFLAGS)
+	$(CC) $(OBJ) -o $(TARGET) $(LDFLAGS) $(LDFLAGS_SAN)
 
 # --- RAYLIB BUILD -----------------------------------------------------
 
@@ -40,12 +48,12 @@ raylib:
 # --- CLEAN ------------------------------------------------------------
 
 clean:
-	@echo "===> Nettoyage complet (obj/, binaire, raylib)..."
 	rm -rf $(OBJ_DIR)
 	rm -f $(TARGET)
-	rm -rf $(RAYLIB_DIR)
 
 fclean: clean
+	@echo "===> Nettoyage complet (obj/, binaire, raylib)..."
+	rm -rf $(RAYLIB_DIR)
 
 re: fclean all
 

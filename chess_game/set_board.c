@@ -1,4 +1,5 @@
 #include "chess_game.h"
+#include "engine/engine.h"
 
 Texture2D wR, bR, wN, bN, wB, bB, wK, bK, wQ, bQ, wP, bP;
 
@@ -24,7 +25,7 @@ void draw_board(t_game *game)
                 DrawTexture(get_texture(game->board[i][j]), i * 100, j * 100, WHITE);
 }
 
-static bool game_over(int board[BOARD_SIZE][BOARD_SIZE])
+bool game_over(int board[BOARD_SIZE][BOARD_SIZE])
 {
     bool wK_found = false, bK_found = false;
     for (int i = 0; i < BOARD_SIZE; i++)
@@ -33,6 +34,17 @@ static bool game_over(int board[BOARD_SIZE][BOARD_SIZE])
             if (board[i][j] == BK) bK_found = true;
         }
     return !wK_found || !bK_found;
+}
+
+static void apply_robot_move(t_game *game)
+{
+    t_move best = generate_moves(game);
+    game->old_x = best.from_x;
+    game->old_y = best.from_y;
+    move_pieces(game, best.to_x, best.to_y);
+    game->board[best.to_x][best.to_y] = game->board[best.from_x][best.from_y];
+    game->board[best.from_x][best.from_y] = EMPTY;
+    game->current_turn = 1 - game->current_turn;
 }
 
 static void handle_input(t_game *game, int x, int y)
@@ -49,6 +61,7 @@ static void handle_input(t_game *game, int x, int y)
     }
     else if (game->is_piece == 1) {
         if (is_valid_destination(game->board, game->old_x, game->old_y, x, y)) {
+            move_pieces(game, x, y);
             game->board[x][y] = game->current_piece;
             game->board[game->old_x][game->old_y] = EMPTY;
             game->is_piece = 0;
@@ -75,7 +88,8 @@ void set_board()
     t_game game = {0};
     SetTargetFPS(60);
     init_board(game.board);
-
+    set_pieces(&game.wp, &game.bp);
+    game.robot_color = 1;
     while (!WindowShouldClose())
     {
         Vector2 mousePos = GetMousePosition();
@@ -86,11 +100,17 @@ void set_board()
         BeginDrawing();
         ClearBackground(RAYWHITE);
         draw_board(&game);
-        if (CheckCollisionPointRec(mousePos, mouse_square) && IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
+        EndDrawing();
+
+        if (game.current_turn == game.robot_color) {
+            apply_robot_move(&game);
+            if (game_over(game.board)) break;
+        }
+        else if (CheckCollisionPointRec(mousePos, mouse_square) && IsMouseButtonPressed(MOUSE_LEFT_BUTTON)
+            && x >= 0 && x < BOARD_SIZE && y >= 0 && y < BOARD_SIZE) {
             handle_input(&game, x, y);
             if (game_over(game.board)) break;
         }
-        EndDrawing();
     }
     UnloadTextures();
 }

@@ -126,6 +126,8 @@ bool is_valid_bpawn_move(int board[BOARD_SIZE][BOARD_SIZE], int old_x, int old_y
 
 bool is_valid_destination(int board[BOARD_SIZE][BOARD_SIZE], int old_x, int old_y, int new_x, int new_y)
 {
+    if (old_x == new_x && old_y == new_y) return false;
+
     if (board[old_x][old_y] == WR || board[old_x][old_y] == BR)
         return is_valid_rook_move(board, old_x, old_y, new_x, new_y);
 
