@@ -1,7 +1,7 @@
 # --- CONFIGURATION ----------------------------------------------------
 
 CC       = gcc
-CFLAGS   = -Wall -Wextra -std=c99 -Iraylib/src -g -fsanitize=address
+CFLAGS   = -Wall -Wextra -std=c99 -Iraylib/src -g -fsanitize=address -MMD -MP
 LDFLAGS_SAN = -fsanitize=address
 LDFLAGS  = -Lraylib/src -lraylib -lm -ldl -lpthread -lGL -lrt -lX11
 
@@ -18,6 +18,7 @@ SRC      = chess_game.c \
 			 engine/check_moves.c \
 
 OBJ      = $(SRC:%.c=$(OBJ_DIR)/%.o)
+DEP      = $(OBJ:%.o=%.d)
 
 TARGET   = chess
 
@@ -56,5 +57,7 @@ fclean: clean
 	rm -rf $(RAYLIB_DIR)
 
 re: fclean all
+
+-include $(DEP)
 
 .PHONY: all clean fclean re raylib

@@ -33,9 +33,17 @@ bool game_over(t_game *game)
 static void apply_robot_move(t_game *game)
 {
     t_move best = generate_moves(game);
+    if (get_piece(game, best.from_y * 8 + best.from_x) == EMPTY)
+        return;
     game->old_x = best.from_x;
     game->old_y = best.from_y;
     move_pieces(game, best.to_x, best.to_y);
+    int moved = get_piece(game, best.to_y * 8 + best.to_x);
+    if (moved == BP && best.to_y == 7)
+    {
+        game->bp.pawns &= ~(1ULL << (best.to_y * 8 + best.to_x));
+        game->bp.queen |=  (1ULL << (best.to_y * 8 + best.to_x)); 
+    }
     game->current_turn = 1 - game->current_turn;
 }
 
@@ -56,8 +64,14 @@ static void handle_input(t_game *game, int x, int y)
             game->is_piece = 1;
         }
     } else {
-        if (is_valid_destination(game, game->old_x, game->old_y, x, y)) {
+        if (is_valid_destination(game, game->old_x, game->old_y, x, y))
+        {
             move_pieces(game, x, y);
+            if ((game->current_piece == WP && y == 0) || (game->current_piece == BP && y == 7))
+            {
+                game->wp.pawns &= ~(1ULL << (y * 8 + x));
+                game->wp.queen |=  (1ULL << (y * 8 + x)); 
+            }
             game->is_piece = 0;
             game->current_turn = 1 - game->current_turn;
         } else if ((wp | bp) & mask) {

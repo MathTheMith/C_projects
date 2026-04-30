@@ -26,3 +26,9 @@
   Et l'inverse pour afficher :                                                
   int x = sq % 8;                     
   int y = sq / 8;
+
+    Échec → dans is_valid_destination, après avoir appliqué le coup tu vérifies 
+  si ton propre roi est en échec, et tu annules si oui. C'est dans movement.c.
+                                                                              
+  Échec et mat / pat → dans la boucle principale de set_board, après chaque   
+  coup tu vérifies si le joueur suivant n'a aucun coup légal disponible.

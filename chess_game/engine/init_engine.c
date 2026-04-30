@@ -41,20 +41,30 @@ void move_pieces(t_game *game, int x, int y)
     int piece    = get_piece(game, from_sq);
     int captured = get_piece(game, to_sq);
 
+    uint64_t *bb = get_bitboard(game, piece);
+    if (!bb) return;
+
     uint64_t from_bit = 1ULL << from_sq;
     uint64_t to_bit   = 1ULL << to_sq;
 
-    *get_bitboard(game, piece) ^= (from_bit | to_bit);
-    if (captured != EMPTY)
-        *get_bitboard(game, captured) ^= to_bit;
+    *bb ^= (from_bit | to_bit);
+    if (captured != EMPTY) {
+        uint64_t *cbb = get_bitboard(game, captured);
+        if (cbb) *cbb ^= to_bit;
+    }
 }
 
 void undo_move(t_game *game, int piece, int from_x, int from_y, int to_x, int to_y, int captured)
 {
+    uint64_t *bb = get_bitboard(game, piece);
+    if (!bb) return;
+
     uint64_t from_bit = 1ULL << (from_y * 8 + from_x);
     uint64_t to_bit   = 1ULL << (to_y   * 8 + to_x);
 
-    *get_bitboard(game, piece) ^= (from_bit | to_bit);
-    if (captured != EMPTY)
-        *get_bitboard(game, captured) ^= to_bit;
+    *bb ^= (from_bit | to_bit);
+    if (captured != EMPTY) {
+        uint64_t *cbb = get_bitboard(game, captured);
+        if (cbb) *cbb ^= to_bit;
+    }
 }
