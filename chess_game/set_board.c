@@ -33,9 +33,13 @@ bool game_over(t_game *game)
 
 static void apply_robot_move(t_game *game)
 {
+    int saved_turn = game->current_turn;
     t_move best = generate_moves(game);
-    if (get_piece(game, best.from_y * 8 + best.from_x) == EMPTY)
-        return;
+    game->current_turn = saved_turn;
+
+    if (best.from_x == best.to_x && best.from_y == best.to_y) return;
+    if (get_piece(game, best.from_y * 8 + best.from_x) == EMPTY) return;
+
     game->old_x = best.from_x;
     game->old_y = best.from_y;
     move_pieces(game, best.to_x, best.to_y);
@@ -98,6 +102,8 @@ void set_board()
     SetTargetFPS(60);
     init_board();
     set_pieces(&game.wp, &game.bp);
+    game.ep_square = -1;
+    game.castling  = 0x0F;
     game.robot_color = 1;
     while (!WindowShouldClose())
     {
@@ -112,6 +118,7 @@ void set_board()
         EndDrawing();
 
         if (game.current_turn == game.robot_color) {
+            if (game_over(&game)) break;
             apply_robot_move(&game);
             if (game_over(&game)) break;
         } else if (CheckCollisionPointRec(mousePos, mouse_square) && IsMouseButtonPressed(MOUSE_LEFT_BUTTON)

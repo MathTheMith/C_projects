@@ -41,6 +41,8 @@ typedef struct {
     int robot_color;
     int old_x;
     int old_y;
+    int ep_square;
+    uint8_t castling;
 } t_game;
 
 typedef struct {

@@ -86,11 +86,33 @@ bool is_valid_king_move(t_game *game, int old_x, int old_y, int new_x, int new_y
     int dx = abs(new_x - old_x);
     int dy = abs(new_y - old_y);
 
-    if (dx > 1 || dy > 1 || (dx == 0 && dy == 0)) return false;
+    if (dx <= 1 && dy <= 1 && !(dx == 0 && dy == 0)) {
+        uint64_t dest = 1ULL << (new_y * 8 + new_x);
+        if (!(get_occupied_bb(game) & dest)) return true;
+        return can_capture(game, old_y * 8 + old_x, new_y * 8 + new_x);
+    }
 
-    uint64_t dest = 1ULL << (new_y * 8 + new_x);
-    if (!(get_occupied_bb(game) & dest)) return true;
-    return can_capture(game, old_y * 8 + old_x, new_y * 8 + new_x);
+    if (dx == 2 && dy == 0) {
+        int piece = get_piece(game, old_y * 8 + old_x);
+        uint64_t occ = get_occupied_bb(game);
+        if (piece == WK && old_x == 4 && old_y == 7 && new_x == 6 && (game->castling & 0x1)) {
+            if (occ & ((1ULL << (7*8+5)) | (1ULL << (7*8+6)))) return false;
+            return true;
+        }
+        if (piece == WK && old_x == 4 && old_y == 7 && new_x == 2 && (game->castling & 0x2)) {
+            if (occ & ((1ULL << (7*8+3)) | (1ULL << (7*8+2)) | (1ULL << (7*8+1)))) return false;
+            return true;
+        }
+        if (piece == BK && old_x == 4 && old_y == 0 && new_x == 6 && (game->castling & 0x4)) {
+            if (occ & ((1ULL << (0*8+5)) | (1ULL << (0*8+6)))) return false;
+            return true;
+        }
+        if (piece == BK && old_x == 4 && old_y == 0 && new_x == 2 && (game->castling & 0x8)) {
+            if (occ & ((1ULL << (0*8+3)) | (1ULL << (0*8+2)) | (1ULL << (0*8+1)))) return false;
+            return true;
+        }
+    }
+    return false;
 }
 
 bool is_valid_wpawn_move(t_game *game, int old_x, int old_y, int new_x, int new_y)
@@ -107,6 +129,8 @@ bool is_valid_wpawn_move(t_game *game, int old_x, int old_y, int new_x, int new_
     }
     if ((new_x == old_x + 1 || new_x == old_x - 1) && new_y == old_y - 1) {
         if (get_black_bb(game) & (1ULL << (new_y * 8 + new_x)))
+            return true;
+        if (game->ep_square == new_y * 8 + new_x)
             return true;
     }
     return false;
@@ -127,6 +151,8 @@ bool is_valid_bpawn_move(t_game *game, int old_x, int old_y, int new_x, int new_
     if ((new_x == old_x + 1 || new_x == old_x - 1) && new_y == old_y + 1) {
         if (get_white_bb(game) & (1ULL << (new_y * 8 + new_x)))
             return true;
+        if (game->ep_square == new_y * 8 + new_x)
+            return true;
     }
     return false;
 }
@@ -146,6 +172,7 @@ bool is_in_check(t_game *game)
     uint64_t enemy_queens   = (game->current_turn == 0) ? game->bp.queen  : game->wp.queen;
     uint64_t enemy_knights  = (game->current_turn == 0) ? game->bp.knight : game->wp.knight;
     uint64_t enemy_pawns    = (game->current_turn == 0) ? game->bp.pawns  : game->wp.pawns;
+    uint64_t enemy_king     = (game->current_turn == 0) ? game->bp.king   : game->wp.king;
 
     int straight[4][2] = {{1,0},{-1,0},{0,1},{0,-1}};
     for (int d = 0; d < 4; d++) {
@@ -185,6 +212,16 @@ bool is_in_check(t_game *game)
             if (enemy_knights & (1ULL << (y * 8 + x))) return true;
     }
 
+    // Enemy king proximity
+    for (int dx = -1; dx <= 1; dx++) {
+        for (int dy = -1; dy <= 1; dy++) {
+            if (dx == 0 && dy == 0) continue;
+            int x = kx + dx, y = ky + dy;
+            if (x >= 0 && x < 8 && y >= 0 && y < 8)
+                if (enemy_king & (1ULL << (y * 8 + x))) return true;
+        }
+    }
+
     int pawn_y = (game->current_turn == 0) ? ky - 1 : ky + 1;
     if (pawn_y >= 0 && pawn_y < 8) {
         if (kx - 1 >= 0 && (enemy_pawns & (1ULL << (pawn_y * 8 + (kx - 1))))) return true;
@@ -212,19 +249,35 @@ bool is_valid_destination(t_game *game, int old_x, int old_y, int new_x, int new
 
     if (!valid) return false;
 
-    // Apply the move temporarily and check if own king is exposed
-    int captured   = get_piece(game, new_y * 8 + new_x);
-    int saved_ox   = game->old_x;
-    int saved_oy   = game->old_y;
-    game->old_x    = old_x;
-    game->old_y    = old_y;
+    // Castling: king must not be in check now, and must not pass through an attacked square
+    if ((piece == WK || piece == BK) && abs(new_x - old_x) == 2) {
+        if (is_in_check(game)) return false;
+        int mid_x = (old_x + new_x) / 2;
+        uint64_t *king_bb = (piece == WK) ? &game->wp.king : &game->bp.king;
+        uint64_t from_bit = 1ULL << (old_y * 8 + old_x);
+        uint64_t mid_bit  = 1ULL << (old_y * 8 + mid_x);
+        *king_bb ^= (from_bit | mid_bit);
+        bool mid_attacked = is_in_check(game);
+        *king_bb ^= (from_bit | mid_bit);
+        if (mid_attacked) return false;
+    }
+
+    int prev_ep       = game->ep_square;
+    uint8_t prev_cast = game->castling;
+    int captured      = get_piece(game, new_y * 8 + new_x);
+    int saved_ox      = game->old_x;
+    int saved_oy      = game->old_y;
+    game->old_x       = old_x;
+    game->old_y       = old_y;
     move_pieces(game, new_x, new_y);
 
     bool in_check = is_in_check(game);
 
     undo_move(game, piece, old_x, old_y, new_x, new_y, captured);
-    game->old_x = saved_ox;
-    game->old_y = saved_oy;
+    game->old_x     = saved_ox;
+    game->old_y     = saved_oy;
+    game->ep_square = prev_ep;
+    game->castling  = prev_cast;
 
     return !in_check;
 }

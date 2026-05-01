@@ -1,5 +1,6 @@
 #include "engine.h"
 #include "../chess_game.h"
+#include <stdlib.h>
 
 void set_pieces(t_bitboards *wp, t_bitboards *bp)
 {
@@ -47,10 +48,53 @@ void move_pieces(t_game *game, int x, int y)
     uint64_t from_bit = 1ULL << from_sq;
     uint64_t to_bit   = 1ULL << to_sq;
 
+    // En passant: diagonal pawn move to empty square
+    if ((piece == WP || piece == BP) && game->old_x != x && captured == EMPTY) {
+        uint64_t *cbb = (piece == WP) ? &game->bp.pawns : &game->wp.pawns;
+        *cbb &= ~(1ULL << (game->old_y * 8 + x));
+    }
+
     *bb ^= (from_bit | to_bit);
     if (captured != EMPTY) {
         uint64_t *cbb = get_bitboard(game, captured);
         if (cbb) *cbb ^= to_bit;
+    }
+
+    // Castling: also move the rook
+    if ((piece == WK || piece == BK) && abs(x - game->old_x) == 2) {
+        uint64_t *rbb = (piece == WK) ? &game->wp.rooks : &game->bp.rooks;
+        if (x > game->old_x)
+            *rbb ^= (1ULL << (game->old_y * 8 + 7)) | (1ULL << (game->old_y * 8 + 5));
+        else
+            *rbb ^= (1ULL << (game->old_y * 8 + 0)) | (1ULL << (game->old_y * 8 + 3));
+    }
+
+    // Update ep_square
+    if (piece == WP && (game->old_y - y) == 2)
+        game->ep_square = (y + 1) * 8 + x;
+    else if (piece == BP && (y - game->old_y) == 2)
+        game->ep_square = (y - 1) * 8 + x;
+    else
+        game->ep_square = -1;
+
+    // Update castling rights
+    if (piece == WK) game->castling &= ~0x3;
+    if (piece == BK) game->castling &= ~0xC;
+    if (piece == WR) {
+        if (game->old_x == 7 && game->old_y == 7) game->castling &= ~0x1;
+        if (game->old_x == 0 && game->old_y == 7) game->castling &= ~0x2;
+    }
+    if (piece == BR) {
+        if (game->old_x == 7 && game->old_y == 0) game->castling &= ~0x4;
+        if (game->old_x == 0 && game->old_y == 0) game->castling &= ~0x8;
+    }
+    if (captured == WR) {
+        if (x == 7 && y == 7) game->castling &= ~0x1;
+        if (x == 0 && y == 7) game->castling &= ~0x2;
+    }
+    if (captured == BR) {
+        if (x == 7 && y == 0) game->castling &= ~0x4;
+        if (x == 0 && y == 0) game->castling &= ~0x8;
     }
 }
 
@@ -66,5 +110,20 @@ void undo_move(t_game *game, int piece, int from_x, int from_y, int to_x, int to
     if (captured != EMPTY) {
         uint64_t *cbb = get_bitboard(game, captured);
         if (cbb) *cbb ^= to_bit;
+    }
+
+    // Castling: move rook back
+    if ((piece == WK || piece == BK) && abs(from_x - to_x) == 2) {
+        uint64_t *rbb = (piece == WK) ? &game->wp.rooks : &game->bp.rooks;
+        if (to_x > from_x)
+            *rbb ^= (1ULL << (from_y * 8 + 5)) | (1ULL << (from_y * 8 + 7));
+        else
+            *rbb ^= (1ULL << (from_y * 8 + 3)) | (1ULL << (from_y * 8 + 0));
+    }
+
+    // En passant: restore the captured pawn
+    if ((piece == WP || piece == BP) && from_x != to_x && captured == EMPTY) {
+        uint64_t *cbb = (piece == WP) ? &game->bp.pawns : &game->wp.pawns;
+        *cbb |= 1ULL << (from_y * 8 + to_x);
     }
 }
