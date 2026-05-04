@@ -15,6 +15,8 @@ typedef struct {
     int       depth;
     int       score;
     tt_flag_t flag;
+    int16_t   best_from;
+    int16_t   best_to;
 } tt_entry_t;
 
 static inline int piece_to_index(int piece) {
