@@ -93,6 +93,7 @@ bool is_valid_king_move(t_game *game, int old_x, int old_y, int new_x, int new_y
     }
 
     if (dx == 2 && dy == 0) {
+        if (is_in_check(game)) return false;
         int piece = get_piece(game, old_y * 8 + old_x);
         uint64_t occ = get_occupied_bb(game);
         if (piece == WK && old_x == 4 && old_y == 7 && new_x == 6 && (game->castling & 0x1)) {

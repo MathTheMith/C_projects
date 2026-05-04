@@ -43,6 +43,8 @@ typedef struct {
     int old_y;
     int ep_square;
     uint8_t castling;
+    int last_from;
+    int last_to;
 } t_game;
 
 typedef struct {

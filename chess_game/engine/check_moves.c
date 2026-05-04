@@ -1,6 +1,7 @@
 #include "engine.h"
 #include "../chess_game.h"
 #include <stdlib.h>
+#include <limits.h>
 
 static bool is_valid_shape(t_game *game, int ox, int oy, int nx, int ny)
 {
@@ -17,9 +18,9 @@ static bool is_valid_shape(t_game *game, int ox, int oy, int nx, int ny)
     return false;
 }
 
-static int minimax(t_game *game, int depth, bool is_black, t_move *out)
+static int minimax(t_game *game, int depth, bool is_black, t_move *out, int alpha, int beta)
 {
-    if (depth == 0)
+    if (depth == 0 || beta <= alpha)
         return evaluate(game);
 
     uint64_t pieces = is_black ? get_black_bb(game) : get_white_bb(game);
@@ -56,11 +57,14 @@ static int minimax(t_game *game, int depth, bool is_black, t_move *out)
                 }
 
                 game->current_turn = is_black ? 0 : 1;
-                int score = minimax(game, depth - 1, !is_black, NULL);
+                int score = minimax(game, depth - 1, !is_black, NULL, alpha, beta);
 
                 undo_move(game, piece, x, y, i, j, captured);
                 game->ep_square = prev_ep;
                 game->castling  = prev_cast;
+
+                if (!is_black && score > alpha) alpha = score;
+                if (is_black  && score < beta)  beta  = score;
 
                 bool better = is_black ? (score < best_score) : (score > best_score);
                 if (better) {
@@ -73,10 +77,14 @@ static int minimax(t_game *game, int depth, bool is_black, t_move *out)
                         out->captured = captured;
                     }
                 }
+
+                if (beta <= alpha)
+                    goto prune;
             }
         }
         pieces &= pieces - 1;
     }
+prune:
     return best_score;
 }
 
@@ -103,7 +111,9 @@ static t_move find_any_legal_move(t_game *game)
 t_move generate_moves(t_game *game)
 {
     t_move best = {0};
-    minimax(game, DEPTH, true, &best);
+    int alpha = INT_MIN;
+    int beta = INT_MAX;
+    minimax(game, DEPTH, true, &best, alpha, beta);
     if (best.from_x == best.to_x && best.from_y == best.to_y)
         best = find_any_legal_move(game);
     return best;
