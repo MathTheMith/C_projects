@@ -45,6 +45,7 @@ typedef struct {
     uint8_t castling;
     int last_from;
     int last_to;
+    uint64_t hash;
 } t_game;
 
 typedef struct {

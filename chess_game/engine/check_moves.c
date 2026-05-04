@@ -3,6 +3,28 @@
 #include <stdlib.h>
 #include <limits.h>
 
+static tt_entry_t tt[TT_SIZE];
+
+#define MAX_MOVES 256
+
+typedef struct {
+    int from_x, from_y, to_x, to_y;
+    int order_score;
+} t_candidate;
+
+static int piece_value(int piece)
+{
+    switch (piece < 0 ? -piece : piece) {
+        case 1: return 100;
+        case 3: return 300;
+        case 4: return 300;
+        case 2: return 500;
+        case 5: return 900;
+        case 6: return 1000;
+    }
+    return 0;
+}
+
 static bool is_valid_shape(t_game *game, int ox, int oy, int nx, int ny)
 {
     if (ox == nx && oy == ny) return false;
@@ -18,75 +40,249 @@ static bool is_valid_shape(t_game *game, int ox, int oy, int nx, int ny)
     return false;
 }
 
-static int minimax(t_game *game, int depth, bool is_black, t_move *out, int alpha, int beta)
+// Génère tous les coups, triés captures en tête (MVV-LVA)
+static int generate_candidates(t_game *game, bool is_black, t_candidate *moves)
 {
-    if (depth == 0 || beta <= alpha)
-        return evaluate(game);
-
+    int count = 0;
     uint64_t pieces = is_black ? get_black_bb(game) : get_white_bb(game);
-    int best_score  = is_black ? 1000000 : -1000000;
 
-    while (pieces)
-    {
+    game->current_turn = is_black ? 1 : 0;
+    while (pieces) {
         int sq = __builtin_ctzll(pieces);
-        int x  = sq % 8;
-        int y  = sq / 8;
+        int x  = sq % 8, y = sq / 8;
 
-        for (int i = 0; i < BOARD_SIZE; i++)
-        {
-            for (int j = 0; j < BOARD_SIZE; j++)
-            {
-                game->current_turn = is_black ? 1 : 0;
-                if (!is_valid_shape(game, x, y, i, j))
-                    continue;
+        for (int i = 0; i < BOARD_SIZE && count < MAX_MOVES; i++) {
+            for (int j = 0; j < BOARD_SIZE && count < MAX_MOVES; j++) {
+                if (!is_valid_shape(game, x, y, i, j)) continue;
 
-                int piece     = get_piece(game, y * 8 + x);
-                int captured  = get_piece(game, j * 8 + i);
-                int prev_ep   = game->ep_square;
-                uint8_t prev_cast = game->castling;
+                int victim   = get_piece(game, j * 8 + i);
+                int attacker = get_piece(game, sq);
+                int score = (victim != EMPTY)
+                    ? piece_value(victim) * 10 - piece_value(attacker)
+                    : 0;
 
-                game->old_x = x;
-                game->old_y = y;
-                move_pieces(game, i, j);
-
-                if (is_in_check(game)) {
-                    undo_move(game, piece, x, y, i, j, captured);
-                    game->ep_square = prev_ep;
-                    game->castling  = prev_cast;
-                    continue;
-                }
-
-                game->current_turn = is_black ? 0 : 1;
-                int score = minimax(game, depth - 1, !is_black, NULL, alpha, beta);
-
-                undo_move(game, piece, x, y, i, j, captured);
-                game->ep_square = prev_ep;
-                game->castling  = prev_cast;
-
-                if (!is_black && score > alpha) alpha = score;
-                if (is_black  && score < beta)  beta  = score;
-
-                bool better = is_black ? (score < best_score) : (score > best_score);
-                if (better) {
-                    best_score = score;
-                    if (out) {
-                        out->from_x   = x;
-                        out->from_y   = y;
-                        out->to_x     = i;
-                        out->to_y     = j;
-                        out->captured = captured;
-                    }
-                }
-
-                if (beta <= alpha)
-                    goto prune;
+                moves[count++] = (t_candidate){ x, y, i, j, score };
             }
         }
         pieces &= pieces - 1;
     }
-prune:
+    return count;
+}
+
+// Génère uniquement les captures (pour la quiescence search)
+static int generate_captures(t_game *game, bool is_black, t_candidate *moves)
+{
+    int count = 0;
+    uint64_t pieces = is_black ? get_black_bb(game) : get_white_bb(game);
+
+    game->current_turn = is_black ? 1 : 0;
+    while (pieces) {
+        int sq       = __builtin_ctzll(pieces);
+        int x        = sq % 8, y = sq / 8;
+        int attacker = get_piece(game, sq);
+
+        for (int i = 0; i < BOARD_SIZE && count < MAX_MOVES; i++) {
+            for (int j = 0; j < BOARD_SIZE && count < MAX_MOVES; j++) {
+                if (!is_valid_shape(game, x, y, i, j)) continue;
+
+                int victim  = get_piece(game, j * 8 + i);
+                // En passant : pion se déplace en diagonale vers une case vide
+                bool is_ep  = (victim == EMPTY)
+                           && (attacker == WP || attacker == BP)
+                           && (x != i);
+
+                if (victim == EMPTY && !is_ep) continue;
+
+                int vic_val = (victim != EMPTY)
+                    ? piece_value(victim)
+                    : piece_value(attacker == WP ? BP : WP); // pion capturé en ep
+                int score   = vic_val * 10 - piece_value(attacker);
+
+                moves[count++] = (t_candidate){ x, y, i, j, score };
+            }
+        }
+        pieces &= pieces - 1;
+    }
+    return count;
+}
+
+// Tri par insertion décroissant — rapide pour ~20-50 coups
+static void sort_candidates(t_candidate *moves, int count)
+{
+    for (int i = 1; i < count; i++) {
+        t_candidate key = moves[i];
+        int j = i - 1;
+        while (j >= 0 && moves[j].order_score < key.order_score) {
+            moves[j + 1] = moves[j];
+            j--;
+        }
+        moves[j + 1] = key;
+    }
+}
+
+// ──────────────────────────────────────────────
+// Quiescence search
+// - Si en échec : explore tous les coups (forçé)
+// - Sinon       : explore uniquement les captures
+// Limité à QDEPTH niveaux.
+// ──────────────────────────────────────────────
+
+static int quiescence(t_game *game, bool is_black, int alpha, int beta, int qdepth)
+{
+    if (qdepth <= 0) return evaluate(game);
+
+    // Vérifie si le camp courant est en échec
+    game->current_turn = is_black ? 1 : 0;
+    bool in_check = is_in_check(game);
+
+    int stand_pat = evaluate(game);
+
+    // Stand-pat invalide quand on est en échec (on doit bouger)
+    if (!in_check) {
+        if (!is_black) {
+            if (stand_pat >= beta)  return beta;
+            if (stand_pat > alpha)  alpha = stand_pat;
+        } else {
+            if (stand_pat <= alpha) return alpha;
+            if (stand_pat < beta)   beta  = stand_pat;
+        }
+    }
+
+    t_candidate moves[MAX_MOVES];
+    // En échec : tous les coups légaux ; sinon : uniquement les captures
+    int n = in_check
+        ? generate_candidates(game, is_black, moves)
+        : generate_captures(game, is_black, moves);
+    sort_candidates(moves, n);
+
+    for (int m = 0; m < n; m++) {
+        int x = moves[m].from_x, y = moves[m].from_y;
+        int i = moves[m].to_x,   j = moves[m].to_y;
+
+        game->current_turn = is_black ? 1 : 0;
+        int piece         = get_piece(game, y * 8 + x);
+        int captured      = get_piece(game, j * 8 + i);
+        int prev_ep       = game->ep_square;
+        uint8_t prev_cast = game->castling;
+
+        game->old_x = x;
+        game->old_y = y;
+        move_pieces(game, i, j);
+
+        if (is_in_check(game)) {
+            undo_move(game, piece, x, y, i, j, captured);
+            game->ep_square = prev_ep;
+            game->castling  = prev_cast;
+            continue;
+        }
+
+        game->current_turn = is_black ? 0 : 1;
+        int score = quiescence(game, !is_black, alpha, beta, qdepth - 1);
+
+        undo_move(game, piece, x, y, i, j, captured);
+        game->ep_square = prev_ep;
+        game->castling  = prev_cast;
+
+        if (!is_black) {
+            if (score >= beta)  return beta;
+            if (score > alpha)  alpha = score;
+        } else {
+            if (score <= alpha) return alpha;
+            if (score < beta)   beta  = score;
+        }
+    }
+
+    return is_black ? beta : alpha;
+}
+
+// ──────────────────────────────────────────────
+// Minimax + alpha-beta + TT + move ordering
+// ──────────────────────────────────────────────
+
+static int minimax(t_game *game, int depth, bool is_black, t_move *out, int alpha, int beta)
+{
+    // TT probe — ignoré à la racine (out != NULL)
+    tt_entry_t *entry = &tt[game->hash & (TT_SIZE - 1)];
+    if (!out && entry->hash == game->hash && entry->depth >= depth) {
+        if (entry->flag == TT_EXACT) return entry->score;
+        if (entry->flag == TT_ALPHA && entry->score <= alpha) return alpha;
+        if (entry->flag == TT_BETA  && entry->score >= beta)  return beta;
+    }
+
+    if (depth == 0)
+        return quiescence(game, is_black, alpha, beta, QDEPTH);
+    if (beta <= alpha)
+        return evaluate(game);
+
+    int orig_alpha = alpha;
+    int orig_beta  = beta;
+    int best_score = is_black ? 1000000 : -1000000;
+    bool any_move  = false;
+
+    t_candidate moves[MAX_MOVES];
+    int n = generate_candidates(game, is_black, moves);
+    sort_candidates(moves, n);
+
+    for (int m = 0; m < n; m++) {
+        int x = moves[m].from_x, y = moves[m].from_y;
+        int i = moves[m].to_x,   j = moves[m].to_y;
+
+        game->current_turn = is_black ? 1 : 0;
+        int piece         = get_piece(game, y * 8 + x);
+        int captured      = get_piece(game, j * 8 + i);
+        int prev_ep       = game->ep_square;
+        uint8_t prev_cast = game->castling;
+
+        game->old_x = x;
+        game->old_y = y;
+        move_pieces(game, i, j);
+
+        if (is_in_check(game)) {
+            undo_move(game, piece, x, y, i, j, captured);
+            game->ep_square = prev_ep;
+            game->castling  = prev_cast;
+            continue;
+        }
+
+        game->current_turn = is_black ? 0 : 1;
+        any_move = true;
+        int score = minimax(game, depth - 1, !is_black, NULL, alpha, beta);
+
+        undo_move(game, piece, x, y, i, j, captured);
+        game->ep_square = prev_ep;
+        game->castling  = prev_cast;
+
+        if (!is_black && score > alpha) alpha = score;
+        if (is_black  && score < beta)  beta  = score;
+
+        bool better = is_black ? (score < best_score) : (score > best_score);
+        if (better) {
+            best_score = score;
+            if (out) {
+                out->from_x   = x;
+                out->from_y   = y;
+                out->to_x     = i;
+                out->to_y     = j;
+                out->captured = captured;
+            }
+        }
+
+        if (beta <= alpha) break;
+    }
+
+    if (any_move) {
+        tt_flag_t flag;
+        if      (best_score <= orig_alpha) flag = TT_ALPHA;
+        else if (best_score >= orig_beta)  flag = TT_BETA;
+        else                               flag = TT_EXACT;
+        *entry = (tt_entry_t){ game->hash, depth, best_score, flag };
+    }
     return best_score;
 }
+
+// ──────────────────────────────────────────────
+// Entrée publique
+// ──────────────────────────────────────────────
 
 static t_move find_any_legal_move(t_game *game)
 {
@@ -111,9 +307,7 @@ static t_move find_any_legal_move(t_game *game)
 t_move generate_moves(t_game *game)
 {
     t_move best = {0};
-    int alpha = INT_MIN;
-    int beta = INT_MAX;
-    minimax(game, DEPTH, true, &best, alpha, beta);
+    minimax(game, DEPTH, true, &best, INT_MIN, INT_MAX);
     if (best.from_x == best.to_x && best.from_y == best.to_y)
         best = find_any_legal_move(game);
     return best;

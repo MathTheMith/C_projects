@@ -70,8 +70,11 @@ static void apply_robot_move(t_game *game, t_history_entry *hist, int *hist_curr
     int moved = get_piece(game, best.to_y * 8 + best.to_x);
     if (moved == BP && best.to_y == 7)
     {
-        game->bp.pawns &= ~(1ULL << (best.to_y * 8 + best.to_x));
-        game->bp.queen |=  (1ULL << (best.to_y * 8 + best.to_x));
+        int promo_sq = best.to_y * 8 + best.to_x;
+        game->bp.pawns &= ~(1ULL << promo_sq);
+        game->bp.queen |=  (1ULL << promo_sq);
+        game->hash ^= zobrist_table[piece_to_index(BP)][promo_sq];
+        game->hash ^= zobrist_table[piece_to_index(BQ)][promo_sq];
     }
     game->current_turn = 1 - game->current_turn;
     game->last_from = best.from_y * 8 + best.from_x;
@@ -102,8 +105,11 @@ static void handle_input(t_game *game, int x, int y, t_history_entry *hist, int 
             move_pieces(game, x, y);
             if ((game->current_piece == WP && y == 0) || (game->current_piece == BP && y == 7))
             {
-                game->wp.pawns &= ~(1ULL << (y * 8 + x));
-                game->wp.queen |=  (1ULL << (y * 8 + x));
+                int promo_sq = y * 8 + x;
+                game->wp.pawns &= ~(1ULL << promo_sq);
+                game->wp.queen |=  (1ULL << promo_sq);
+                game->hash ^= zobrist_table[piece_to_index(WP)][promo_sq];
+                game->hash ^= zobrist_table[piece_to_index(WQ)][promo_sq];
             }
             game->is_piece = 0;
             game->current_turn = 1 - game->current_turn;
@@ -136,12 +142,14 @@ void set_board()
 
     SetTargetFPS(60);
     init_board();
+    init_zobrist();
     set_pieces(&game.wp, &game.bp);
     game.ep_square = -1;
     game.castling  = 0x0F;
     game.robot_color = 1;
     game.last_from = -1;
     game.last_to   = -1;
+    game.hash = compute_hash(&game);
     hist[0].state = game;
 
     while (!WindowShouldClose())
